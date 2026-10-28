@@ -1,0 +1,43 @@
+{
+  "schema": "u277-reports-quota/1",
+  "_note": "冻结见 tests/lib/reports-quota.mjs 的 FROZEN_*；改上限必须追加 history 并把 cap 一起改",
+  "cap": {
+    "files": 546,
+    "bytes": 15490188
+  },
+  "history": [
+    {
+      "version": "1.60.0",
+      "files": 548,
+      "bytes": 16652273
+    },
+    {
+      "version": "1.60.0",
+      "files": 546,
+      "bytes": 15490188
+    }
+  ],
+  "measuredAtFreeze": {
+    "files": 542,
+    "bytes": 14555121,
+    "dirs": {
+      "(根)": 55,
+      "batch0-审计台-2026-10-09": 1,
+      "batch1-gitlab配额-2026-10-09": 1,
+      "batch2-doctor口径-2026-10-09": 1,
+      "batch3-函数拆分与门债务-2026-10-10": 1,
+      "gates": 253,
+      "health": 4,
+      "provenance": 3,
+      "r2": 21,
+      "r4": 84,
+      "selfresearch-20260828": 3,
+      "U-240-多轮调研冒烟-2026-10-25": 7,
+      "v7": 2,
+      "v8": 3,
+      "优化调研-2026-10-08": 2,
+      "验收-全维度-2026-10-25": 80,
+      "验收-全量-2026-10-26": 21
+    }
+  }
+}

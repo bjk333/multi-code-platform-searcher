@@ -1,0 +1,32 @@
+# U-138 tests/ 发布覆盖（2026-09-29）：tests/ 下每个文件必须在根清单 fileHashes 或本文件中；门 tests/test-u138-release-coverage.test.mjs
+# 节 [exclude]：永久不发布（每行上方必须有一行 # 理由）
+# 节 [pending-p1]：临时排除 —— U-138 P1 策略 = 全量纳入（宿主 R77 推荐）；清单为宿主工件，宿主补键后请删除对应行（门只对本节计数打印 WARN，不判红；进入清单后仍留在本节会判 stale 红）
+[exclude]
+# 构建配方：Linux 实跑镜像（tests/crossplat.dockerfile）。运行时不需要 —— 它只描述"怎么造一个
+#   有 pwsh + node 的容器"，且基础镜像 tag 会随上游滚动，不该钉进产品包。对应的
+#   .github/workflows/crossplat.yml 同样只在仓库侧生效（Actions 只读仓库根）。
+crossplat.dockerfile
+# 运行生成物：run-tests.ps1 每次落盘的结果日志，不是发布资产
+test-results.log
+[pending-p1]
+# R90 本批新增测试资产：父 workspace 根清单由宿主所有者更新；此处显式计数待纳入，不把缺项当已发布。
+# （B1/B2 两件 test-u155-u156-network-route.test.mjs / u155-network-route-harness.ps1 已于 2026-09-29 由宿主纳入根清单 fileHashes，故不再列此节）
+# （U-153 三件 gate-partition.mjs / gate-env-preload.mjs / test-u153-gate-partition.test.mjs 已于 2026-09-30 由宿主纳入根清单 fileHashes，故不再列此节）
+# （R94/R95 四件 r94-ps-probe.mjs / test-r94-eval-ruler.test.mjs / test-r94-encoding-completeness.test.mjs / test-r95-asjson-contract.test.mjs 已于 2026-09-30 由宿主纳入根清单 fileHashes，故不再列此节）
+# （R2 七件 r2-ps-run.mjs / asjson-validator.mjs / test-r2m-ripgrep-lock.test.mjs / test-r2-spawn-hygiene.test.mjs / test-r96-injection-invariants.test.mjs / r96-injection-harness.ps1 / test-r96-live-payload.test.mjs，连同 tools/ripgrep.lock.json、schema/mcp-tool.pin.json 已于 2026-10-02 由宿主纳入根清单 fileHashes，故不再列此节）
+# （批次1/2 两件 test-gitlab-budget.ps1 / test-doctor-alignment.ps1 于 2026-10-09 新增，父 workspace 根清单由宿主所有者更新；
+#   此处显式计数待纳入，不把缺项当已发布。二者均为**常驻离线门**（无生成物性质），入清单后请删除下面两行。）
+# （批次B·CI 两件 test-gitlab-budget-ci.test.mjs / test-doctor-alignment-ci.test.mjs 于 2026-10-11 新增：上面两道 PS 门的
+#   Node 包装门（真仓绿臂 + 副本变异臂 + sha 卫生），常驻离线门；父 workspace 根清单由宿主所有者更新，入清单后请删除下面两行。）
+# （A-7 一件 test-a7-doctor-smoke.test.mjs 于 2026-10-11 新增：-Doctor 非空冒烟门（活体 + MCPS_NO_MAIN 反向自检），常驻门。）
+# （批次B·CI 两件 + 批次1/2 两件 + A-7 一件，共 5 件已于 2026-10-11 由主体登记根清单 fileHashes，故不再列此节）
+# （A-11 两件 test-a11-ratelimited-sources.test.mjs / a11-ratelimited-harness.ps1 于 2026-10-11 新增：doctor.rateLimitedSources 单列门（零网络夹具 + 变异臂），常驻门；入清单后请删除下面两行。）
+# （A-9 一件 test-a9-prereg-lock.test.mjs 于 2026-10-11 新增：假阴性分类表的预注册锁门（sha / 阈值 / 结论可重算），常驻门；入清单后请删除下面一行。）
+# 本节其余为空：tests/ 下其余文件都已在根清单 fileHashes 内。
+
+# （A-11 两件 + A-9 锁门一件，共 3 件已于 2026-10-12 由主体登记根清单 fileHashes，故不再列此节）
+#
+# 2026-10-26 清账：以下 15 件（B1 批 14 件 + 并行会话的 U-250 门 1 件）已由
+#   `publish-skill.ps1 -RegisterMissing -StampOnly -Version 1.53.26` **正式登记进根清单**
+#   （条目 224 → 241，随后镜像同步），故本节清空 —— 留着会判 stale，这正是 U-138 的防漏删设计：
+#   「临时登记」必须是一张会过期的账，不能变成第二份清单。

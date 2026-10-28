@@ -1,0 +1,723 @@
+{
+    "at":  "2026-10-17T13:16:46",
+    "version":  "1.39.0",
+    "ps":  "5.1.26100.9444",
+    "norm":  [
+                 {
+                     "input":  "queries",
+                     "norm":  "query",
+                     "bigrams":  [
+                                     "queries"
+                                 ],
+                     "expect":  "query"
+                 },
+                 {
+                     "input":  "libraries",
+                     "norm":  "library",
+                     "bigrams":  [
+                                     "libraries"
+                                 ],
+                     "expect":  "library"
+                 },
+                 {
+                     "input":  "dependencies",
+                     "norm":  "dependency",
+                     "bigrams":  [
+                                     "dependencies"
+                                 ],
+                     "expect":  "dependency"
+                 },
+                 {
+                     "input":  "proxies",
+                     "norm":  "proxy",
+                     "bigrams":  [
+                                     "proxies"
+                                 ],
+                     "expect":  "proxy"
+                 },
+                 {
+                     "input":  "bodies",
+                     "norm":  "body",
+                     "bigrams":  [
+                                     "bodies"
+                                 ],
+                     "expect":  "body"
+                 },
+                 {
+                     "input":  "policies",
+                     "norm":  "policy",
+                     "bigrams":  [
+                                     "policies"
+                                 ],
+                     "expect":  "policy"
+                 },
+                 {
+                     "input":  "ties",
+                     "norm":  "tie",
+                     "bigrams":  [
+                                     "ties"
+                                 ],
+                     "expect":  "tie"
+                 },
+                 {
+                     "input":  "pies",
+                     "norm":  "pie",
+                     "bigrams":  [
+                                     "pies"
+                                 ],
+                     "expect":  "pie"
+                 },
+                 {
+                     "input":  "movies",
+                     "norm":  "movie",
+                     "bigrams":  [
+                                     "movies"
+                                 ],
+                     "expect":  "movie"
+                 },
+                 {
+                     "input":  "cookies",
+                     "norm":  "cookie",
+                     "bigrams":  [
+                                     "cookies"
+                                 ],
+                     "expect":  "cookie"
+                 },
+                 {
+                     "input":  "series",
+                     "norm":  "serie",
+                     "bigrams":  [
+                                     "series"
+                                 ],
+                     "expect":  "serie"
+                 },
+                 {
+                     "input":  "species",
+                     "norm":  "specie",
+                     "bigrams":  [
+                                     "species"
+                                 ],
+                     "expect":  "specie"
+                 },
+                 {
+                     "input":  "query",
+                     "norm":  "query",
+                     "bigrams":  [
+                                     "query"
+                                 ],
+                     "expect":  "query"
+                 },
+                 {
+                     "input":  "library",
+                     "norm":  "library",
+                     "bigrams":  [
+                                     "library"
+                                 ],
+                     "expect":  "library"
+                 },
+                 {
+                     "input":  "dependency",
+                     "norm":  "dependency",
+                     "bigrams":  [
+                                     "dependency"
+                                 ],
+                     "expect":  "dependency"
+                 },
+                 {
+                     "input":  "movie",
+                     "norm":  "movie",
+                     "bigrams":  [
+                                     "movie"
+                                 ],
+                     "expect":  "movie"
+                 },
+                 {
+                     "input":  "cookie",
+                     "norm":  "cookie",
+                     "bigrams":  [
+                                     "cookie"
+                                 ],
+                     "expect":  "cookie"
+                 },
+                 {
+                     "input":  "fetch",
+                     "norm":  "get",
+                     "bigrams":  [
+                                     "fetch"
+                                 ],
+                     "expect":  "get"
+                 },
+                 {
+                     "input":  "retrieve",
+                     "norm":  "get",
+                     "bigrams":  [
+                                     "retrieve"
+                                 ],
+                     "expect":  "get"
+                 },
+                 {
+                     "input":  "obtain",
+                     "norm":  "get",
+                     "bigrams":  [
+                                     "obtain"
+                                 ],
+                     "expect":  "get"
+                 },
+                 {
+                     "input":  "remove",
+                     "norm":  "delete",
+                     "bigrams":  [
+                                     "remove"
+                                 ],
+                     "expect":  "delete"
+                 },
+                 {
+                     "input":  "enumerate",
+                     "norm":  "list",
+                     "bigrams":  [
+                                     "enumerate"
+                                 ],
+                     "expect":  "list"
+                 },
+                 {
+                     "input":  "fetches",
+                     "norm":  "fetche",
+                     "bigrams":  [
+                                     "fetches"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "unicode-ident",
+                     "norm":  "unicode ident",
+                     "bigrams":  [
+                                     "unicode",
+                                     "ident"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "code",
+                     "norm":  "code",
+                     "bigrams":  [
+                                     "code"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "unicode",
+                     "norm":  "unicode",
+                     "bigrams":  [
+                                     "unicode"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "guid",
+                     "norm":  "guid",
+                     "bigrams":  [
+                                     "guid"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "uid",
+                     "norm":  "uid",
+                     "bigrams":  [
+                                     "uid"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "Redis",
+                     "norm":  "redi",
+                     "bigrams":  [
+                                     "redis"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "Ｒｅｄｉｓ",
+                     "norm":  "redi",
+                     "bigrams":  [
+                                     "redis"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "redis分布式锁",
+                     "norm":  "redi 分布式锁",
+                     "bigrams":  [
+                                     "redis分布式锁"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "Redis 分布式锁",
+                     "norm":  "redi 分布式锁",
+                     "bigrams":  [
+                                     "redis",
+                                     "分布",
+                                     "布式",
+                                     "式锁"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "RetrievalAugmentedGeneration",
+                     "norm":  "rag",
+                     "bigrams":  [
+                                     "retrievalaugmentedgeneration"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "HTTPServer",
+                     "norm":  "http server",
+                     "bigrams":  [
+                                     "httpserver"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "分布式锁实现",
+                     "norm":  "分布式锁实现",
+                     "bigrams":  [
+                                     "分布",
+                                     "布式",
+                                     "式锁",
+                                     "锁实",
+                                     "实现"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "分布式锁",
+                     "norm":  "分布式锁",
+                     "bigrams":  [
+                                     "分布",
+                                     "布式",
+                                     "式锁"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "分布式计算",
+                     "norm":  "分布式计算",
+                     "bigrams":  [
+                                     "分布",
+                                     "布式",
+                                     "式计",
+                                     "计算"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "oauth2 pkce",
+                     "norm":  "oauth2 pkce",
+                     "bigrams":  [
+                                     "oauth2",
+                                     "pkce"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "organisation",
+                     "norm":  "organization",
+                     "bigrams":  [
+                                     "organisation"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "analyse",
+                     "norm":  "analyze",
+                     "bigrams":  [
+                                     "analyse"
+                                 ],
+                     "expect":  null
+                 },
+                 {
+                     "input":  "APIs",
+                     "norm":  "api",
+                     "bigrams":  [
+                                     "apis"
+                                 ],
+                     "expect":  "api"
+                 },
+                 {
+                     "input":  "UUIDs",
+                     "norm":  "uuid",
+                     "bigrams":  [
+                                     "uuids"
+                                 ],
+                     "expect":  "uuid"
+                 },
+                 {
+                     "input":  "XMLs",
+                     "norm":  "xml",
+                     "bigrams":  [
+                                     "xmls"
+                                 ],
+                     "expect":  "xml"
+                 },
+                 {
+                     "input":  "IOError",
+                     "norm":  "io error",
+                     "bigrams":  [
+                                     "ioerror"
+                                 ],
+                     "expect":  "io error"
+                 },
+                 {
+                     "input":  "XMLHttpRequest",
+                     "norm":  "xml http request",
+                     "bigrams":  [
+                                     "xmlhttprequest"
+                                 ],
+                     "expect":  "xml http request"
+                 },
+                 {
+                     "input":  "retrievalAugmented",
+                     "norm":  "retrieval augmented",
+                     "bigrams":  [
+                                     "retrievalaugmented"
+                                 ],
+                     "expect":  "retrieval augmented"
+                 },
+                 {
+                     "input":  "MyClass",
+                     "norm":  "my class",
+                     "bigrams":  [
+                                     "myclass"
+                                 ],
+                     "expect":  "my class"
+                 }
+             ],
+    "whole":  [
+                  {
+                      "hay":  "guid",
+                      "term":  "uid",
+                      "hayNorm":  "guid",
+                      "termNorm":  "uid",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "U-128 类：uid 不得命中 guid"
+                  },
+                  {
+                      "hay":  "unicode",
+                      "term":  "code",
+                      "hayNorm":  "unicode",
+                      "termNorm":  "code",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "U-128 类：code 不得命中 unicode"
+                  },
+                  {
+                      "hay":  "distributed lock",
+                      "term":  "distributed lock",
+                      "hayNorm":  "distributed lock",
+                      "termNorm":  "distributed lock",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "整短语命中"
+                  },
+                  {
+                      "hay":  "redis 分布式锁",
+                      "term":  "分布式锁",
+                      "hayNorm":  "redi 分布式锁",
+                      "termNorm":  "分布式锁",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "中英混接后 CJK 连续串命中"
+                  },
+                  {
+                      "hay":  "分布式计算",
+                      "term":  "分布式锁",
+                      "hayNorm":  "分布式计算",
+                      "termNorm":  "分布式锁",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "C2 不越界：计算 ≠ 锁"
+                  },
+                  {
+                      "hay":  "springboot redislock",
+                      "term":  "redislock",
+                      "hayNorm":  "springboot redislock",
+                      "termNorm":  "redislock",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "连写标识符整词命中"
+                  },
+                  {
+                      "hay":  "myguid",
+                      "term":  "guid",
+                      "hayNorm":  "myguid",
+                      "termNorm":  "guid",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "左边界：myguid 内不得命中 guid"
+                  },
+                  {
+                      "hay":  "guid",
+                      "term":  "guid",
+                      "hayNorm":  "guid",
+                      "termNorm":  "guid",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "自身命中"
+                  },
+                  {
+                      "hay":  "redis distributed lock",
+                      "term":  "distributed lock",
+                      "hayNorm":  "redi distributed lock",
+                      "termNorm":  "distributed lock",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "短语在词边界内"
+                  },
+                  {
+                      "hay":  "redis过期",
+                      "term":  "redis",
+                      "hayNorm":  "redi 过期",
+                      "termNorm":  "redi",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "拉丁↔CJK 补空格后 redis 仍是整词"
+                  },
+                  {
+                      "hay":  "redis过期",
+                      "term":  "过期",
+                      "hayNorm":  "redi 过期",
+                      "termNorm":  "过期",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "补空格后 过期 左边界成立（★曾因 fixture 直传 raw 而误判 False）"
+                  },
+                  {
+                      "hay":  "queries",
+                      "term":  "query",
+                      "hayNorm":  "query",
+                      "termNorm":  "query",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a①：queries → query，与单数同源（修复前 querie，永不互配）"
+                  },
+                  {
+                      "hay":  "query",
+                      "term":  "queries",
+                      "hayNorm":  "query",
+                      "termNorm":  "query",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a① 双向等价"
+                  },
+                  {
+                      "hay":  "libraries",
+                      "term":  "library",
+                      "hayNorm":  "library",
+                      "termNorm":  "library",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a① 词尾修复"
+                  },
+                  {
+                      "hay":  "dependencies",
+                      "term":  "dependency",
+                      "hayNorm":  "dependency",
+                      "termNorm":  "dependency",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a① 词尾修复"
+                  },
+                  {
+                      "hay":  "proxies",
+                      "term":  "proxy",
+                      "hayNorm":  "proxy",
+                      "termNorm":  "proxy",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a 默认路径（ies→y）"
+                  },
+                  {
+                      "hay":  "bodies",
+                      "term":  "body",
+                      "hayNorm":  "body",
+                      "termNorm":  "body",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a 默认路径（ies→y）"
+                  },
+                  {
+                      "hay":  "policies",
+                      "term":  "policy",
+                      "hayNorm":  "policy",
+                      "termNorm":  "policy",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a 默认路径（ies→y）"
+                  },
+                  {
+                      "hay":  "movies",
+                      "term":  "movie",
+                      "hayNorm":  "movie",
+                      "termNorm":  "movie",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a③ 例外表：-ie 词干走「去尾 s」，不得变 movy"
+                  },
+                  {
+                      "hay":  "movie",
+                      "term":  "movies",
+                      "hayNorm":  "movie",
+                      "termNorm":  "movie",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a③ 例外表双向"
+                  },
+                  {
+                      "hay":  "cookies",
+                      "term":  "cookie",
+                      "hayNorm":  "cookie",
+                      "termNorm":  "cookie",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a③ 例外表"
+                  },
+                  {
+                      "hay":  "ties",
+                      "term":  "tie",
+                      "hayNorm":  "tie",
+                      "termNorm":  "tie",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a 长度保护：ties(4) 不动，交给去尾 s 得 tie"
+                  },
+                  {
+                      "hay":  "pies",
+                      "term":  "pie",
+                      "hayNorm":  "pie",
+                      "termNorm":  "pie",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2a 长度保护"
+                  },
+                  {
+                      "hay":  "unicode",
+                      "term":  "code",
+                      "hayNorm":  "unicode",
+                      "termNorm":  "code",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2a② 回归：修复后仍不得引入子串回潮"
+                  },
+                  {
+                      "hay":  "guid",
+                      "term":  "uid",
+                      "hayNorm":  "guid",
+                      "termNorm":  "uid",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2a② 回归：整词边界不变"
+                  },
+                  {
+                      "hay":  "fetch",
+                      "term":  "get",
+                      "hayNorm":  "get",
+                      "termNorm":  "get",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c：fetch → get 规范形"
+                  },
+                  {
+                      "hay":  "get",
+                      "term":  "fetch",
+                      "hayNorm":  "get",
+                      "termNorm":  "get",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c 双向等价"
+                  },
+                  {
+                      "hay":  "retrieve",
+                      "term":  "get",
+                      "hayNorm":  "get",
+                      "termNorm":  "get",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c 同组"
+                  },
+                  {
+                      "hay":  "obtain",
+                      "term":  "get",
+                      "hayNorm":  "get",
+                      "termNorm":  "get",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c 同组"
+                  },
+                  {
+                      "hay":  "remove",
+                      "term":  "delete",
+                      "hayNorm":  "delete",
+                      "termNorm":  "delete",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c 第二组"
+                  },
+                  {
+                      "hay":  "enumerate",
+                      "term":  "list",
+                      "hayNorm":  "list",
+                      "termNorm":  "list",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c 第三组"
+                  },
+                  {
+                      "hay":  "fetchData",
+                      "term":  "get data",
+                      "hayNorm":  "get data",
+                      "termNorm":  "get data",
+                      "hit":  true,
+                      "expect":  true,
+                      "why":  "3-2c × 驼峰拆词：fetchData → get data"
+                  },
+                  {
+                      "hay":  "make",
+                      "term":  "do",
+                      "hayNorm":  "make",
+                      "termNorm":  "do",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2c② 泛词不入表：do/make 不得互配"
+                  },
+                  {
+                      "hay":  "create",
+                      "term":  "add",
+                      "hayNorm":  "create",
+                      "termNorm":  "add",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2c② 泛词不入表：create/add 不得互配"
+                  },
+                  {
+                      "hay":  "use",
+                      "term":  "apply",
+                      "hayNorm":  "use",
+                      "termNorm":  "apply",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2c② 泛词不入表：use/apply 不得互配"
+                  },
+                  {
+                      "hay":  "fetches",
+                      "term":  "get",
+                      "hayNorm":  "fetche",
+                      "termNorm":  "get",
+                      "hit":  false,
+                      "expect":  false,
+                      "why":  "3-2c② 变位不入表：fetches 不映射（宁缺毋滥，已声明的边界）"
+                  }
+              ]
+}

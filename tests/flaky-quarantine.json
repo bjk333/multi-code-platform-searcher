@@ -1,0 +1,4 @@
+{
+  "_doc": "U-159 K3 · flaky 隔离表。政策：quarantine（移出阻塞集 + 开 ticket）优于 skip。条目必须带 gate/ticket/since/reason，且 gate 必须真实存在。空数组是合法且当前正确的状态（本仓当前无已知 flaky 门）。rt: 由 tests/test-u159-test-effectiveness.test.mjs 的 K3-b/c/d/e 把守。",
+  "entries": []
+}

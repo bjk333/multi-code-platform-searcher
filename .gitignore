@@ -1,0 +1,45 @@
+# v1.37.0（归并 M-4，源自 A 支线 v1.36.3 P0-2）：canonical（本目录，位于仓库 <workspace> 的子目录）把凭据、缓存、二进制、临时产物挡在库外。
+# 注意：.gitignore 不会 untrack 已入库文件，已跟踪项须另做 git rm --cached（M-5）。
+# ---- 凭据（绝不入库）----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*secret*
+# ---- 运行时缓存 / 日志 / 用户状态 ----
+search_cache.json
+smart-search_cache.json
+run.log
+_user_meta.json
+plan_custom_model_eval.json
+tests/test-results.log
+_verify/
+# ---- 压测 / 调试 / 取证临时产物 ----
+stress_report.txt
+stress_summary.json
+_*.txt
+_*.json
+.r[0-9]*.json
+.r[0-9]*.txt
+.doctor-*.txt
+_archive/
+reports/_*.txt
+# ---- 备份 ----
+*.bak-*
+*.bak
+# ---- 二进制（体积大、应由安装脚本/发布渠道获取）----
+*.exe
+/bin/
+# v1.37.2：只忽略 tools/bin 下的文件（非目录本身），以便 README.md 入库说明恢复方式
+tools/bin/*
+!tools/bin/README.md
+
+# U-242：跨运行源健康记忆（运行时状态，不入库、不发布）
+source-health.json
+
+# U-246：测量互斥锁（run-node-gates 写、发布器见即拒；运行时状态，不入库）
+.audit-lock
+.gate-green.json
+# U-291（v1.71.0）：PS 套件的发布凭证（run-tests.ps1 写、发布器见即校验；运行时状态，不入库）
+.ps-gate.json

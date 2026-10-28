@@ -1,0 +1,208 @@
+{
+  "purpose": "R94 评测标尺离线读数用 qrels（远端 R1，2026-09-30）。排序 = 一次真实 -ResearchSources 运行的冻结快照；标签 = 分级相关度 0/1/2。",
+  "query": "retrieval augmented generation evaluation",
+  "intent": "找『评估 RAG 系统』的方法/工具/讨论；只讲 RAG 或只讲检索、未涉及评估的记 0",
+  "judged_by": "remote-agent（LLM）银标，未经人工复核 —— 读数只证明『标尺可复算』，不代表检索质量结论",
+  "label_scale": {
+    "2": "直接回答意图",
+    "1": "部分相关（涉及 RAG 评估但偏具体故障）",
+    "0": "无关"
+  },
+  "run": {
+    "mode": "research",
+    "limit": 4,
+    "engine_verdict": "full",
+    "executed": [
+      "HF",
+      "Packages",
+      "RubyGems",
+      "NuGet",
+      "DockerHub",
+      "arXiv",
+      "OpenAlex",
+      "MCPRegistry",
+      "HackerNews",
+      "SE"
+    ],
+    "version": "1.38.0",
+    "where": "容器 pwsh 7，经出网代理，2026-09-30"
+  },
+  "sources_with_results": [
+    "DockerHub",
+    "HackerNews",
+    "StackExchange",
+    "arXiv",
+    "crates.io",
+    "npm"
+  ],
+  "items": [
+    {
+      "rank": 1,
+      "source": "arXiv",
+      "name": "Ragas: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "http://arxiv.org/abs/2309.15217v2",
+      "rel": 2
+    },
+    {
+      "rank": 2,
+      "source": "StackExchange",
+      "name": "Why does answer_relevancy return NaN when evaluating RAG with Ragas?",
+      "url": "https://stackoverflow.com/questions/79774588/why-does-answer-relevancy-return-nan-when-evaluating-rag-with-ragas",
+      "rel": 1
+    },
+    {
+      "rank": 3,
+      "source": "HackerNews",
+      "name": "Ragas: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "rel": 2
+    },
+    {
+      "rank": 4,
+      "source": "StackExchange",
+      "name": "Best Approach to Evaluate a Graph RAG Pipeline Using Metrics?",
+      "url": "https://stackoverflow.com/questions/78881336/best-approach-to-evaluate-a-graph-rag-pipeline-using-metrics",
+      "rel": 2
+    },
+    {
+      "rank": 5,
+      "source": "arXiv",
+      "name": "AR-RAG: Autoregressive Retrieval Augmentation for Image Generation",
+      "url": "http://arxiv.org/abs/2506.06962v3",
+      "rel": 0
+    },
+    {
+      "rank": 6,
+      "source": "DockerHub",
+      "name": "mcp/aws-kb-retrieval-server",
+      "url": "https://hub.docker.com/r/mcp/aws-kb-retrieval-server",
+      "rel": 0
+    },
+    {
+      "rank": 7,
+      "source": "HackerNews",
+      "name": "Show HN: Tonic Validate Metrics – an open-source RAG evaluation metrics package",
+      "url": "https://github.com/TonicAI/tvalmetrics",
+      "rel": 2
+    },
+    {
+      "rank": 8,
+      "source": "DockerHub",
+      "name": "acuvity/mcp-server-aws-kb-retrieval",
+      "url": "https://hub.docker.com/r/acuvity/mcp-server-aws-kb-retrieval",
+      "rel": 0
+    },
+    {
+      "rank": 9,
+      "source": "DockerHub",
+      "name": "acuvity/mcp-server-aws-bedrock-kb-retrieval",
+      "url": "https://hub.docker.com/r/acuvity/mcp-server-aws-bedrock-kb-retrieval",
+      "rel": 0
+    },
+    {
+      "rank": 10,
+      "source": "HackerNews",
+      "name": "Show HN: Open Evaluation",
+      "url": "https://openevaluation.ai/",
+      "rel": 0
+    },
+    {
+      "rank": 11,
+      "source": "HackerNews",
+      "name": "Show HN: Local RAG Eval Harness – reproducible benchmarksfor retrieval pipelines",
+      "url": "https://news.ycombinator.com/item?id=45595999",
+      "rel": 2
+    },
+    {
+      "rank": 12,
+      "source": "DockerHub",
+      "name": "intel/speech-generation",
+      "url": "https://hub.docker.com/r/intel/speech-generation",
+      "rel": 0
+    },
+    {
+      "rank": 13,
+      "source": "arXiv",
+      "name": "Factually: Exploring Wearable Fact-Checking for Augmented Truth Discernment",
+      "url": "http://arxiv.org/abs/2504.17204v1",
+      "rel": 0
+    },
+    {
+      "rank": 14,
+      "source": "crates.io",
+      "name": "swiftide",
+      "url": "https://crates.io/crates/swiftide",
+      "rel": 0
+    },
+    {
+      "rank": 15,
+      "source": "npm",
+      "name": "@langchain/textsplitters",
+      "url": "https://www.npmjs.com/package/@langchain/textsplitters",
+      "rel": 0
+    },
+    {
+      "rank": 16,
+      "source": "crates.io",
+      "name": "swiftide-core",
+      "url": "https://crates.io/crates/swiftide-core",
+      "rel": 0
+    },
+    {
+      "rank": 17,
+      "source": "crates.io",
+      "name": "swiftide-indexing",
+      "url": "https://crates.io/crates/swiftide-indexing",
+      "rel": 0
+    },
+    {
+      "rank": 18,
+      "source": "crates.io",
+      "name": "swiftide-macros",
+      "url": "https://crates.io/crates/swiftide-macros",
+      "rel": 0
+    },
+    {
+      "rank": 19,
+      "source": "npm",
+      "name": "@pinecone-database/pinecone",
+      "url": "https://www.npmjs.com/package/@pinecone-database/pinecone",
+      "rel": 0
+    },
+    {
+      "rank": 20,
+      "source": "npm",
+      "name": "lunr-languages",
+      "url": "https://www.npmjs.com/package/lunr-languages",
+      "rel": 0
+    },
+    {
+      "rank": 21,
+      "source": "StackExchange",
+      "name": "Natural language to JSON for N8N workflows",
+      "url": "https://stackoverflow.com/questions/79610433/natural-language-to-json-for-n8n-workflows",
+      "rel": 0
+    },
+    {
+      "rank": 22,
+      "source": "npm",
+      "name": "@mastra/rag",
+      "url": "https://www.npmjs.com/package/@mastra/rag",
+      "rel": 0
+    },
+    {
+      "rank": 23,
+      "source": "StackExchange",
+      "name": "Is this Deep Learning → GenAI roadmap (project-based) sufficient for transitioning into LLM &amp; GenAI engineering in 2026?",
+      "url": "https://stackoverflow.com/questions/79876894/is-this-deep-learning-%e2%86%92-genai-roadmap-project-based-sufficient-for-transitioni",
+      "rel": 0
+    },
+    {
+      "rank": 24,
+      "source": "arXiv",
+      "name": "Intelligent Interaction Strategies for Context-Aware Cognitive Augmentation",
+      "url": "http://arxiv.org/abs/2504.13684v1",
+      "rel": 0
+    }
+  ]
+}

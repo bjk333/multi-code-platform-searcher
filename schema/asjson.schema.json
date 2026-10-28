@@ -1,0 +1,1060 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multi-code-platform-searcher/asjson.schema.json",
+  "title": "multi-code-platform-searcher -AsJson output",
+  "description": "结构化输出契约。PS5.1 环境因无 Test-Json，由脚本内 Test-AsJsonContract 做等效结构化校验；本文件供上游（PS7/其他工具）做标准 JSON Schema 校验与文档参考。U-89（2026-09-26）起由门双向守护：顶层 / metrics / coverage 的键集必须与主脚本 $payload / $metrics / $coverage 字面量一致（tests/test-r4-docs.test.mjs），运行时由 run-tests.ps1 第 3 组按实际输出复核。 R95（2026-09-30，远端 R1）：迁 JSON Schema 2020-12 —— 旧 definitions 改 $defs；每层 additionalProperties:false + 完整 required；可空一律写 type:[\"T\",\"null\"]（不用 OpenAPI 的可空关键字）；顶层 oneOf 区分『正常包』与『_schemaError 兜底包』（条件字段不能硬套全 required）；results 项按是否含 File 判别 repo/code 双模。顶层 properties 保留为键集总表（U-89 双向门据此比对）。",
+  "type": "object",
+  "required": [
+    "version",
+    "results",
+    "metrics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "Name",
+          "Platform",
+          "Url",
+          "Flags"
+        ],
+        "description": "双模判别（判别键 File 与运行时 Test-AsJsonContract 相同；运行时只查必填、代码项 Stars 可选，schema 另加两支互斥，更严）：含 File 且不含 Stars ⇒ 代码证据（6 个代码引擎的结果字面量均无 Stars；Stars 只由仓库引擎与 arXiv 引用补全写入）；否则为仓库/研究结果且必须含 Stars、不得含 File——两支互斥，混入即拒。R95 起项级封闭（additionalProperties:false），键集来自 engines/*.ps1 与主脚本的全部结果字面量（AST 盘点）。",
+        "properties": {
+          "Index": {
+            "type": "integer"
+          },
+          "Platform": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Stars": {
+            "type": [
+              "number",
+              "integer",
+              "null"
+            ],
+            "description": "仅 repo / research 模式（U-94 实测：code 模式 0/5，代码证据无热度）"
+          },
+          "Unit": {
+            "type": "string",
+            "description": "Stars 的计量单位：stars / downloads/month / popularity (proxy) 等；仅 repo / research 模式（code 模式 0/5）"
+          },
+          "Url": {
+            "type": "string"
+          },
+          "Desc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "repo / research 模式填充；code 模式恒为 null（U-94 实测 0/5）"
+          },
+          "License": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "仅 repo 模式（U-94 实测：research 0/20、code 0/5 —— 研究源与代码证据不提供许可证）"
+          },
+          "Updated": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "repo 模式填充；research 部分源填充（U-94 实测 5/20）；code 模式 0/5"
+          },
+          "Relaxed": {
+            "type": "boolean",
+            "description": "仅 repo 模式（GitHub 松弛候选链标记）；research/code 0/n"
+          },
+          "Stale": {
+            "type": "boolean",
+            "description": "repo 结果的条件字段：GitHub 实时检索未成功且存在可回退的陈旧缓存时写入 true；正常实时结果通常不含此键。样本 0/n 仅表示未命中该分支，不能据此推断不存在该写入路径；Auto 混合结果也按来源判定。"
+          },
+          "Score": {
+            "type": "number",
+            "description": "统一打分（0–1）。U-119（2026-09-28）起 = 0.8×Relevance + 0.2×Popularity（有关键词时）；无关键词时 = Popularity"
+          },
+          "Relevance": {
+            "type": "number",
+            "description": "U-119：关键词术语覆盖率 = 命中术语数 / 术语总数（0–1）；排序主项"
+          },
+          "Popularity": {
+            "type": "number",
+            "description": "U-119：同 Platform 组内归一化热度（ApiScore 或 Stars / 组内最大值，0–1）；仅占 Score 的 0.2，做同分微调"
+          },
+          "ApiScore": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "仅 repo 类 Gitee so API 命中时填充，来自 _score 的内部相关度分；Gitee v5 回退及其它引擎通常不输出。样本 0/n 不证明该字段恒空；Auto 混合结果按来源判定。"
+          },
+          "MatchTerms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "NoiseFlagged": {
+            "type": "boolean"
+          },
+          "File": {
+            "type": "string",
+            "description": "仅代码证据结果（code / 本地代码检索，或 Auto 混合输出中的代码结果）；repo / research 结果不填充。含 File 即按代码证据双模判定。"
+          },
+          "Line": {
+            "type": [
+              "number",
+              "integer",
+              "null"
+            ],
+            "description": "仅 code 模式且仅 Sourcegraph / GitLabBlobs 提供行号（U-94 实测 GitHubCode/grep.app 为 null ⇒ 0/5）"
+          },
+          "Preview": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "code 模式片段（5/5）；research 部分源也会给摘要（5/20）"
+          },
+          "ScoreParts": {
+            "type": "object",
+            "description": "R94-C：排序可解释三分量（只标注，不参与排序）；relevance/popularity 与同名顶层字段同值，recency=exp(−ageDays/365)，无 Updated 为 null",
+            "required": [
+              "relevance",
+              "popularity",
+              "recency"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "relevance": {
+                "type": "number"
+              },
+              "popularity": {
+                "type": "number"
+              },
+              "recency": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "EntityKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "R94-D：候选实体键（host 无关的规范 owner/name 路径：NFKC+去零宽→小写→去尾 .git→GitLab 取完整 namespace→[-_.]+ 折叠为 -）。跨宿主同键≠已证实同一项目 ⇒ 只作候选召回，不据此删除结果；非代码托管站为 null"
+          },
+          "Archived": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "v1.46.7 起仓库发现结果带此字段（-ExcludeArchived / -ActiveWithin 读它）。★缺失 ≠ 未归档：缺失表示上游没给，过滤逻辑按 Unknown 处理，不得当 false。schema 此前漏登记，v1.47.3 由真实样本校验暴露（R95-B：unexpected key Archived）。"
+          },
+          "Flags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "invisible",
+                "hidden-comment",
+                "instruction-phrase",
+                "cross-tool-ref",
+                "exfil-sink",
+                "encoded-block",
+                "nfkc-variant",
+                "mixed-script"
+              ]
+            },
+            "uniqueItems": true,
+            "description": "R96：注入检测标记（只标注、不拦截；对清洗前原文检测）。恒存在，未命中为 []。"
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "title": "code-evidence",
+            "required": [
+              "File"
+            ],
+            "not": {
+              "required": [
+                "Stars"
+              ]
+            }
+          },
+          {
+            "title": "repo-or-research",
+            "not": {
+              "required": [
+                "File"
+              ]
+            },
+            "required": [
+              "Stars"
+            ]
+          }
+        ]
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "ElapsedMs",
+        "EngineMs",
+        "ResultCount",
+        "CacheHit",
+        "RateLimitedCount",
+        "WorkingSetMB",
+        "PerPlatformSuccess",
+        "PerPlatformCount",
+        "PerPlatformOutcome",
+        "P95LatencyMs",
+        "RetryCount",
+        "RetryBudgetLeft",
+        "Requests",
+        "RequestsSucceeded",
+        "RequestsFailed",
+        "RequestsReturned",
+        "Tokens",
+        "SpanStatus",
+        "ExitCode",
+        "InjectionFlags"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ElapsedMs": {
+          "type": "number"
+        },
+        "EngineMs": {
+          "type": "object",
+          "description": "U-61：每引擎耗时 ms，键 = 注册表 Name",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "ResultCount": {
+          "type": "integer"
+        },
+        "CacheHit": {
+          "type": "boolean"
+        },
+        "RateLimitedCount": {
+          "type": "integer"
+        },
+        "WorkingSetMB": {
+          "type": "number"
+        },
+        "PerPlatformSuccess": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "PerPlatformCount": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "PerPlatformOutcome": {
+          "$ref": "#/properties/coverage",
+          "description": "与顶层 coverage 同一对象（历史字段，保留）"
+        },
+        "P95LatencyMs": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "RetryCount": {
+          "type": "integer"
+        },
+        "RetryBudgetLeft": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "Requests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "U-256（B1-6）：**attempted** —— 每一次真正走到发送的 HTTP 请求（含重试与 node 兜底；预算早退/主机已死不算）。v1.53.26 及以前此字段=RequestsReturned，语义已变更"
+        },
+        "RequestsSucceeded": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "U-256：拿到 2xx 的请求数"
+        },
+        "RequestsFailed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "U-256：attempted − succeeded（传输失败、HTTP ≥400、node 兜底失败都算）。恒等式：Requests = RequestsSucceeded + RequestsFailed"
+        },
+        "RequestsReturned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "U-256：**旧口径**（共享延迟袋条数 = 拿到响应的次数），保留一个版本供老消费者对照；缓存命中为 0"
+        },
+        "Tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "R94-F：本技能不调用计 token 的模型接口 ⇒ 恒 null（unset）"
+        },
+        "SpanStatus": {
+          "type": "string",
+          "enum": [
+            "unset",
+            "error"
+          ],
+          "description": "R94-F（OTel）：零结果 / 部分源失败 = unset；仅 coverage.Verdict=none = error"
+        },
+        "ExitCode": {
+          "type": "integer",
+          "enum": [
+            0,
+            2,
+            3,
+            4
+          ],
+          "description": "0 正常 / 2 tool_missing / 3 auth_missing / 4 降级或部分失败"
+        },
+        "InjectionFlags": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "invisible",
+            "hidden-comment",
+            "instruction-phrase",
+            "cross-tool-ref",
+            "exfil-sink",
+            "encoded-block",
+            "nfkc-variant",
+            "mixed-script"
+          ],
+          "properties": {
+            "invisible": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hidden-comment": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "instruction-phrase": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cross-tool-ref": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "exfil-sink": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "encoded-block": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "nfkc-variant": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mixed-script": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "description": "R96：各检测标记命中的结果条数（只计数；可 hard-fail 的只有结构不变量，见 tests/test-r96-injection-invariants）"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "Requested",
+        "Executed",
+        "Blocked",
+        "Degraded",
+        "Reasons",
+        "ReasonCodes",
+        "Verdict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "Requested": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Executed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "实际执行的引擎 Name（harness 语义校验的判据）"
+        },
+        "Blocked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Degraded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Reasons": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "ReasonCodes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "missing-credential",
+              "tool-missing",
+              "network-unavailable",
+              "rate-limited",
+              "deadline",
+              "error",
+              "zero-hit",
+              "budget-truncated",
+              "filtered",
+              "forbidden",
+              "not-run",
+              "user-disabled",
+              "quota-exhausted"
+            ]
+          },
+          "description": "U-120b（2026-09-28）：逐引擎机器可读原因码（未产出结果的引擎才出现）；user-disabled = 被 MCPS_DISABLE 禁用的本模式引擎，不进 Requested 只进本表；quota-exhausted = 上游 402/余额不足（v2 新增；L1 判 blocked，legacy 压成 error —— 压成 unknown 会让它被记进 NotRun，那是谎称「这个源没跑」）"
+        },
+        "Verdict": {
+          "type": "string",
+          "enum": [
+            "full",
+            "partial",
+            "degraded",
+            "none",
+            "no-engines"
+          ],
+          "description": "U-120（2026-09-28）：none = 请求了引擎但 Executed 为空（全 blocked/degraded）；no-engines = 什么都没请求（全被禁用）；partial/degraded 只在 Executed 非空时出现"
+        }
+      }
+    },
+    "research": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "仅 research 模式且全轮 0 命中时为对象，否则 null",
+      "additionalProperties": false,
+      "properties": {
+        "interpretation": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string"
+        },
+        "lowConfidenceNegative": {
+          "type": "boolean"
+        },
+        "searchRounds": {},
+        "suggestedWiderQueries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disclaimer": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "interpretation",
+        "confidence",
+        "lowConfidenceNegative",
+        "searchRounds",
+        "suggestedWiderQueries",
+        "disclaimer"
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "引擎 fallback / 失败路径警示（v1.23.0 #5c）"
+    },
+    "completeness": {
+      "type": "object",
+      "description": "R94-H：不完整要自曝。total_count 为本地去重后候选数（total_scope=local-candidates，不是上游全量）；sources_at_limit 非空 ⇒ 上游可能还有更多（truncated=true，cursor 给 requery 游标）；context 为 top-K 摘取（mode=extract）。截断却不带这些字段 ⇒ 违约。",
+      "additionalProperties": false,
+      "required": [
+        "returned_count",
+        "total_count",
+        "omitted_count",
+        "total_scope",
+        "mode",
+        "truncated",
+        "cursor",
+        "per_source_limit",
+        "sources_at_limit",
+        "context"
+      ],
+      "properties": {
+        "returned_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_scope": {
+          "const": "local-candidates"
+        },
+        "mode": {
+          "enum": [
+            "raw",
+            "extract",
+            "summary"
+          ]
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "cursor": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "param",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "requery"
+            },
+            "param": {
+              "const": "Limit"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "per_source_limit": {
+          "type": "integer"
+        },
+        "sources_at_limit": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "returned_count",
+            "total_count",
+            "omitted_count",
+            "truncated"
+          ],
+          "properties": {
+            "mode": {
+              "const": "extract"
+            },
+            "returned_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "omitted_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "truncated": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "context": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "RAG 友好纯文本上下文（top-K）"
+    },
+    "_schemaError": {
+      "type": "string",
+      "description": "仅在校验失败时出现的字段，用于让上游区分『结构非法』与『合法空结果』。此时 results 为空数组、无 coverage/research/warnings/context。"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial",
+        "empty",
+        "failed"
+      ],
+      "description": "U-160 L1：对外四态契约。★**只许由 coverage.Verdict 机械派生，不得独立赋值**（派生表 full→ok｜partial→partial｜degraded→partial｜none→failed｜no-engines→empty）。理由是避免同一事实在两处说不同话（本仓曾因 results 与 ReasonCodes 并存矛盾吃过亏）。一致性由 tests/test-u160-degradation-contract.test.mjs 双向把守。"
+    },
+    "unreachable": {
+      "type": "array",
+      "description": "U-160 L2（AIP-217）：**网络不可达**的子源清单。★只有 network_unavailable 进这里；**成功的零命中（zero-hit）绝不进**（否则即『空跑冒充成功』）。",
+      "items": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^engines\\.[A-Za-z0-9_-]+$",
+            "description": "子源路径，形状 engines/<引擎名>"
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "description": "U-160 L2（AIP-217）：失败子源清单。★code **引用既有 ReasonCodes 枚举（唯一真源在主脚本 switch），本 schema 刻意不复制该枚举**以免漂移；成员资格由 tests/test-u160-degradation-contract.test.mjs 与主脚本交叉核对。",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^engines\\.[A-Za-z0-9_-]+$"
+          },
+          "code": {
+            "type": "string",
+            "description": "既有 ReasonCodes 之一（zero-hit 不得出现在此，因为 zero-hit 是**成功**）"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "R4-F1-c（2026-10-04）：该子源失败的**原因摘要**（已过 Protect-TextField 脱敏；≤200 字符）。★此前 errors[] 只有 {path,code}，\"deadline\"/\"error\" 对调用方是黑盒。★本仓 schema 纪律为 closed + full required ⇒ 该字段**必填**；无原因时主脚本发**空串**（不是省略）。"
+          }
+        }
+      }
+    },
+    "modes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "v1.47.3（P1-2）：本轮**实际执行**的模式（`-Auto` 时为 planner 判定结果，含 `-LocalCodeSearch` 补入的 code）。与 MCP `search_auto` 的 `modes` 同义 —— 同一能力同一契约。"
+    },
+    "queryType": {
+      "type": ["string", "null"],
+      "description": "v1.47.3：仅 `-Auto` 有值（planner 的 queryType）；非 Auto 恒 null（不猜）。"
+    },
+    "planSource": {
+      "type": ["string", "null"],
+      "description": "v1.47.3：仅 `-Auto` 有值（planner / fallback）；非 Auto 恒 null。"
+    },
+    "autoKeyword": {
+      "type": ["string", "null"],
+      "description": "v1.47.3：`-Auto` 对 repo/code 分支实际下发的检索式（research 分支仍用原句）；非 Auto 恒 null。"
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "code", "research"],
+      "properties": {
+        "repo": { "type": "integer", "minimum": 0 },
+        "code": { "type": "integer", "minimum": 0 },
+        "research": { "type": "integer", "minimum": 0 }
+      },
+      "description": "v1.47.3：各模式结果条数（按模式块结算，与 MCP `search_auto` 的 `counts` 同口径）。"
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["budgetMs", "spentMs", "reserveMs", "truncated", "skipped", "pools", "ledger"],
+      "properties": {
+        "budgetMs": { "type": "integer", "minimum": 0, "description": "本轮**总**预算（MCPS_TOTAL_BUDGET_SEC × 1000）；未设预算 ⇒ 0，不编默认值。" },
+        "spentMs": { "type": "integer", "minimum": 0, "description": "本轮墙钟（与 `metrics.ElapsedMs` 同源，同一只秒表）。" },
+        "reserveMs": { "type": "integer", "minimum": 0, "description": "归并/渲染预留（B1-2 定的 1500ms）；写出来是为了让「预算 − 实耗」能对账。" },
+        "truncated": { "type": "boolean", "description": "是否发生过截断：任一池早停（预算/逐源截止）**或** 任一引擎 reasonCode ∈ {deadline, budget-truncated}。早停不得伪装成\"源无结果\"。" },
+        "skipped": {
+          "type": "array",
+          "description": "请求过但**没执行**的源。★直接复用 `coverage.ReasonCodes` 的取值（health-skip / user-disabled / not-run / missing-credential / tool-missing），不另起一套判定 —— 同一事实两处算必然漂移。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["engine", "reasonCode"],
+            "properties": {
+              "engine": { "type": "string" },
+              "reasonCode": { "type": "string" }
+            }
+          }
+        },
+        "pools": {
+          "type": "array",
+          "description": "逐池事实（`-Auto` 三池 ⇒ 三条）。`sufficient` 刻意**不放顶层**：顶层给一个布尔会掩盖\"repo 够了、code 不够\"。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mode", "budgetMs", "spentMs", "earlyStop", "sufficient"],
+            "properties": {
+              "mode": { "type": "string", "description": "池内引擎的 Kind（repo/code/research）；同池同类由注册表保证。" },
+              "budgetMs": { "type": "integer", "minimum": 0, "description": "**收紧后**的池预算（已被总预算夹过）；0 = 未设。" },
+              "spentMs": { "type": "integer", "minimum": 0 },
+              "earlyStop": { "type": "boolean" },
+              "sufficient": { "type": "boolean", "description": "有产出的源数 ≥ 2（B1-2 的充分性口径）。" }
+            }
+          }
+        },
+        "ledger": {
+          "type": ["object", "null"],
+          "description": "B2-6（v1.53.31）：成本账本**汇总**。行级明细只写 JSONL（`MCPS_LEDGER=<path>`），载荷只放汇总 —— 几十行塞进载荷会让每次检索的响应无谓膨胀。null = 调用点未提供（`New-ExecutionBlock` 的默认；CLI/MCP 两路恒为对象）。★硬恒等式：`rows == metrics.Requests`。",
+          "additionalProperties": false,
+          "required": ["runId", "rows", "path", "written", "error"],
+          "properties": {
+            "runId": { "type": "string", "description": "本轮唯一 id（`yyyyMMdd-HHmmss-<6hex>`）。JSONL 行的唯一键是 (runId, seq) —— seq 只在**一轮内**唯一（每轮重置是刻意的）。" },
+            "rows": { "type": "integer", "minimum": 0, "description": "本轮记下的尝试行数；必须等于 `metrics.Requests`（两者同点入账，门 U-261 在真跑上钉住）。" },
+            "path": { "type": ["string", "null"], "description": "JSONL 落盘路径（绝对）。null = 未设 `MCPS_LEDGER`（正常态，不是错误）。" },
+            "written": { "type": "integer", "minimum": 0, "description": "本次成功追加的行数；未落盘时恒 0。" },
+            "error": { "type": ["string", "null"], "description": "落盘异常原文；null = 无异常。★与 `path:null` 严格区分：那是\"没开\"，这是\"开了但写失败\"。" }
+          }
+        }
+      },
+      "description": "B2-5（v1.53.30）：RunEnvelope v2 的 `execution` 块 —— 预算花在哪、哪些源被跳过、哪些池早停。CLI `-AsJson` 与 MCP `structuredContent` 是**同一份对象**（mcps.py 直接透传），因此无需双写。B2-6（v1.53.31）在此块内加 `ledger` 汇总。"
+    }
+  },
+  "oneOf": [
+    {
+      "title": "payload",
+      "required": [
+        "version",
+        "modes",
+        "queryType",
+        "planSource",
+        "autoKeyword",
+        "counts",
+        "results",
+        "metrics",
+        "coverage",
+        "research",
+        "warnings",
+        "completeness",
+        "context",
+        "status",
+        "unreachable",
+        "errors",
+        "execution"
+      ],
+      "not": {
+        "required": [
+          "_schemaError"
+        ]
+      }
+    },
+    {
+      "title": "schema-error-fallback",
+      "required": [
+        "version",
+        "_schemaError",
+        "results",
+        "metrics"
+      ],
+      "properties": {
+        "results": {
+          "maxItems": 0
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "coverage"
+            ]
+          },
+          {
+            "required": [
+              "research"
+            ]
+          },
+          {
+            "required": [
+              "warnings"
+            ]
+          },
+          {
+            "required": [
+              "completeness"
+            ]
+          },
+          {
+            "required": [
+              "context"
+            ]
+          },
+          {
+            "required": [
+              "status"
+            ]
+          },
+          {
+            "required": [
+              "unreachable"
+            ]
+          },
+          {
+            "required": [
+              "errors"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "researchBatch": {
+      "description": "U-152: -ResearchBatch 是独立顶层包；使用 #/$defs/researchBatch 验证，不改变默认单条 -AsJson schema 根。成功无命中保留 coverage.Verdict=full, reasonCode=zero-hit；全部未执行则 Verdict=none。",
+      "type": "object",
+      "required": [
+        "version",
+        "mode",
+        "queries",
+        "coverage",
+        "metrics",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "mode": {
+          "const": "research-batch"
+        },
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "Index",
+              "Keyword",
+              "Status",
+              "ResultCount",
+              "results",
+              "coverage",
+              "ReasonCodes",
+              "reasonCode",
+              "Error"
+            ],
+            "properties": {
+              "Index": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "Keyword": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "Status": {
+                "enum": [
+                  "ok",
+                  "degraded",
+                  "none",
+                  "no-engines",
+                  "error"
+                ]
+              },
+              "ResultCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "results": {
+                "type": "array"
+              },
+              "coverage": {
+                "$ref": "#/properties/coverage"
+              },
+              "ReasonCodes": {
+                "type": "object",
+                "additionalProperties": {
+                  "enum": [
+                    "missing-credential",
+                    "tool-missing",
+                    "network-unavailable",
+                    "rate-limited",
+                    "deadline",
+                    "error",
+                    "zero-hit",
+                    "budget-truncated",
+                    "filtered",
+                    "forbidden",
+                    "not-run",
+                    "user-disabled",
+                    "quota-exhausted"
+                  ]
+                }
+              },
+              "reasonCode": {
+                "description": "null=成功有命中；zero-hit=成功执行但无匹配；filtered=执行成功但结果全被质量门槛丢弃（源健康，是我们自己丢的）；失败时按 missing-credential, tool-missing, network-unavailable, rate-limited, deadline, quota-exhausted, error, forbidden, not-run, user-disabled, zero-hit 的固定优先级取一项。保留 ReasonCodes 逐引擎映射。",
+                "enum": [
+                  null,
+                  "missing-credential",
+                  "tool-missing",
+                  "network-unavailable",
+                  "rate-limited",
+                  "deadline",
+                  "error",
+                  "zero-hit",
+                  "budget-truncated",
+                  "filtered",
+                  "forbidden",
+                  "not-run",
+                  "user-disabled",
+                  "quota-exhausted"
+                ]
+              },
+              "metrics": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "warnings": {
+                "type": [
+                  "array",
+                  "null"
+                ]
+              },
+              "Error": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "required": [
+            "ReasonCodes",
+            "Verdict"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ReasonCodes": {
+              "type": "object",
+              "additionalProperties": {
+                "enum": [
+                  "missing-credential",
+                  "tool-missing",
+                  "network-unavailable",
+                  "rate-limited",
+                  "deadline",
+                  "error",
+                  "zero-hit",
+                  "budget-truncated",
+                  "filtered",
+                  "forbidden",
+                  "not-run",
+                  "user-disabled",
+                  "quota-exhausted"
+                ]
+              }
+            },
+            "Verdict": {
+              "enum": [
+                "full",
+                "partial",
+                "none",
+                "no-engines"
+              ]
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "required": [
+            "ElapsedMs",
+            "QueryCount",
+            "FailedCount",
+            "ResultCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ElapsedMs": {
+              "type": "number"
+            },
+            "QueryCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "FailedCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ResultCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "partial",
+            "empty",
+            "failed"
+          ],
+          "description": "U-164：与主载荷**同一套四态、同一份派生表**（Get-ContractStatus），由 coverage.Verdict 机械派生。doctor 包**不**给 status：它没有 Verdict ⇒ 无派生源（该决策已落成 tests/test-u160-degradation-contract 的断言）。"
+        }
+      }
+    }
+  }
+}

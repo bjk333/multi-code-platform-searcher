@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "v1.50.0（2026-10-22）：MCP `tools/call` 的 `structuredContent` 契约 —— 按**工具**给出 -Serve 响应的形状（一份 schema 覆盖不了六个 op，所以按工具分）。mcps.py 读取本文件并把 x-tools[工具名] 连同 $defs 一起作为 tools/list 的 outputSchema 下发；tools/call 成功时把同一对象放进 structuredContent（content[0].text 仍是同一份 JSON 串，兼容不读 structuredContent 的客户端）。★additionalProperties=true 是**故意**的：这些响应会随版本增加字段，严格模式会让老客户端因为新字段报错；本文件保证的是 required 里的键一定在、且类型正确。★results[].* 不在这里钉：各引擎条目形状不同（repo 有 Stars/Score，code 有 File/Line，research 有 Title），钉死等于把引擎实现细节变成对外契约。",
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "required": ["Requested", "Executed", "Blocked", "Degraded", "NotRun", "Verdict"],
+      "properties": {
+        "Requested": { "type": "array", "items": { "type": "string" } },
+        "Executed": { "type": "integer", "minimum": 0 },
+        "Blocked": { "type": "integer", "minimum": 0 },
+        "Degraded": { "type": "integer", "minimum": 0 },
+        "NotRun": { "type": "integer", "minimum": 0 },
+        "Verdict": { "type": "string", "enum": ["full", "degraded", "partial", "none", "no-engines"] }
+      },
+      "additionalProperties": true
+    },
+    "reasons": { "type": "object", "additionalProperties": { "type": "string" } },
+    "results": { "type": "array", "items": { "type": "object" } },
+    "common": {
+      "type": "object",
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      }
+    }
+  },
+  "x-tools": {
+    "search_repositories": {
+      "type": "object",
+      "required": ["op", "count", "platforms", "coverage", "results"],
+      "properties": {
+        "op": { "const": "repo" },
+        "count": { "type": "integer", "minimum": 0 },
+        "platforms": { "type": "array", "items": { "type": "string" } },
+        "disabledPlatforms": { "type": "array", "items": { "type": "string" } },
+        "filtered": { "type": ["integer", "null"], "minimum": 0 },
+        "filterNotes": { "type": "array", "items": { "type": "string" } },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      },
+      "additionalProperties": true
+    },
+    "search_code": {
+      "type": "object",
+      "required": ["op", "count", "coverage", "results"],
+      "properties": {
+        "op": { "const": "code" },
+        "count": { "type": "integer", "minimum": 0 },
+        "repoScope": { "type": "string" },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      },
+      "additionalProperties": true
+    },
+    "research": {
+      "type": "object",
+      "required": ["op", "count", "site", "coverage", "results"],
+      "properties": {
+        "op": { "const": "research" },
+        "count": { "type": "integer", "minimum": 0 },
+        "site": { "type": "string" },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      },
+      "additionalProperties": true
+    },
+    "search_auto": {
+      "type": "object",
+      "required": ["op", "count", "modes", "queryType", "counts", "coverage", "results"],
+      "properties": {
+        "op": { "const": "auto" },
+        "count": { "type": "integer", "minimum": 0 },
+        "modes": { "type": "array", "items": { "type": "string", "enum": ["repo", "code", "research"] } },
+        "queryType": { "type": "string", "enum": ["research_only", "repository_only", "code_evidence_only", "integrated_research_and_code"] },
+        "planSource": { "type": "string" },
+        "autoKeyword": { "type": "string" },
+        "counts": {
+          "type": "object",
+          "required": ["repo", "code", "research"],
+          "properties": {
+            "repo": { "type": "integer", "minimum": 0 },
+            "code": { "type": "integer", "minimum": 0 },
+            "research": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": true
+        },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      },
+      "additionalProperties": true
+    },
+    "package_lookup": {
+      "type": "object",
+      "required": ["op", "count", "coverage", "results"],
+      "properties": {
+        "op": { "const": "package" },
+        "count": { "type": "integer", "minimum": 0 },
+        "cached": { "type": "boolean" },
+        "ms": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "reasons": { "$ref": "#/$defs/reasons" },
+        "results": { "$ref": "#/$defs/results" }
+      },
+      "additionalProperties": true
+    },
+    "ping": {
+      "type": "object",
+      "required": ["op", "version", "pid", "ms"],
+      "properties": {
+        "op": { "const": "ping" },
+        "version": { "type": "string" },
+        "pid": { "type": "integer", "minimum": 0 },
+        "ms": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    }
+  }
+}

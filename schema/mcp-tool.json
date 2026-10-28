@@ -1,0 +1,95 @@
+{
+  "$comment": "U-123（2026-09-28）：MCP tools/list 用的 Tool 描述符（字段依 MCP 规范 2025-06-18 server/tools：name/title/description/inputSchema/outputSchema/annotations）。outputSchema 直接引用 -AsJson 契约 asjson.schema.json；tools/call 结果 = content[text: 同一 JSON 串] + structuredContent(= -AsJson 顶层对象)。isError 规则见 references/引擎链.md「MCP 字段对照」。x-ps-param 为脚本参数名映射（Node 门 test-u123 校验存在）。 ⚠ v1.50.0 现状：**真实工具已接线** —— tools/list 的 6 个工具各自带 outputSchema、tools/call 成功时带 structuredContent，契约在 `schema/mcp-output.schema.json`（按工具分，含 $defs）。本文件描述的是 **CLI `-AsJson`** 形状（单一聚合工具），保留下来只服务于 U-123 的同源比对与 R96 钉值，**不是** MCP 实际下发的 schema；改 MCP 响应契约请改 mcp-output.schema.json。",
+  "name": "multi_code_platform_search",
+  "title": "Multi-Code-Platform Searcher",
+  "description": "统一技术调研与代码仓库搜索：repo（GitHub/Gitee/GitLab/Codeberg 相似项目）、code（GitHub/GitLab/Sourcegraph/grep.app 代码证据）、research（HF/npm/PyPI/crates/OpenAlex/arXiv/HN/SE 等）。返回 results + coverage{Requested,Executed,Blocked,Degraded,Reasons,ReasonCodes,Verdict}；缺凭据/降级记入 coverage 与 warnings，不视为工具错误。",
+  "inputSchema": {
+    "type": "object",
+    "required": [
+      "keyword"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "keyword": {
+        "type": "string",
+        "minLength": 1,
+        "description": "检索关键词（空格分词，可用引号短语）",
+        "x-ps-param": "Keyword"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "repo",
+          "code",
+          "research",
+          "auto"
+        ],
+        "default": "repo",
+        "description": "repo=默认；code ⇒ -CodeEvidence；research ⇒ -ResearchSources；auto ⇒ -Auto",
+        "x-ps-param": "CodeEvidence|ResearchSources|Auto"
+      },
+      "platform": {
+        "type": "string",
+        "default": "All",
+        "description": "-Platform（All 或引擎名）",
+        "x-ps-param": "Platform"
+      },
+      "minStars": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "description": "-MinStars；MCP 调用默认 0（r60 根因：默认 100 + 低区分度词 ⇒ 假 0 命中）",
+        "x-ps-param": "MinStars"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 10,
+        "x-ps-param": "Limit"
+      },
+      "language": {
+        "type": "string",
+        "x-ps-param": "Language"
+      },
+      "focusTerms": {
+        "type": "string",
+        "description": "-FocusTerms 逗号分隔核心词",
+        "x-ps-param": "FocusTerms"
+      },
+      "noiseFloor": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "default": 0,
+        "description": "-NoiseFloor（v1.37.9 起 Score=0.8×Relevance+0.2×Popularity）",
+        "x-ps-param": "NoiseFloor"
+      },
+      "site": {
+        "type": "string",
+        "description": "research 模式 StackExchange -Site",
+        "x-ps-param": "Site"
+      },
+      "expandQuery": {
+        "type": "boolean",
+        "default": false,
+        "x-ps-param": "ExpandQuery"
+      },
+      "noCache": {
+        "type": "boolean",
+        "default": false,
+        "x-ps-param": "NoCache"
+      }
+    }
+  },
+  "outputSchema": {
+    "$ref": "asjson.schema.json"
+  },
+  "annotations": {
+    "title": "Multi-Code-Platform Searcher",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+  }
+}

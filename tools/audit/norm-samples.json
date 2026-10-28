@@ -1,0 +1,369 @@
+{
+  "_comment": "0-6 同源门的唯一权威样本集。改这里 = 改门；export-norm-fixture.ps1 与 cross-check.py 都读这一份，不得各自内嵌。 ★2026-10-10：补 7 条已审定样本（[A-Z]s 一族 + 规则②本意）—— 此前该族无样本，导致当日语义改动未被门抓住（自查发现）。",
+  "_covers": "全角NFKC / 驼峰拆词 / 中英混接 / -ies 断裂(批次3 3-2a) / 整词边界(False 侧含 uid∈guid、unicode∈code、分布式锁∈分布式计算) / 大写复数缩写([A-Z]s, R94 修复)",
+  "_legs": "腿①同源(PS↔Python) / 腿①b期望(hit==expect 与 norm==expect，本轮补) / 腿②未漂移(PS现行↔基线)",
+  "_expectRule": "带 expect 的条目 = 已审定的**理论期望**，门会直接断言；纯字符串条目只参与同源/漂移腿。给尚未审定的行为加 expect 会把它锁死，故宁缺毋滥。",
+  "_version": "1.3.0",
+  "_updated": "2026-10-10",
+  "normSamples": [
+    {
+      "input": "queries",
+      "expect": "query"
+    },
+    {
+      "input": "libraries",
+      "expect": "library"
+    },
+    {
+      "input": "dependencies",
+      "expect": "dependency"
+    },
+    {
+      "input": "proxies",
+      "expect": "proxy"
+    },
+    {
+      "input": "bodies",
+      "expect": "body"
+    },
+    {
+      "input": "policies",
+      "expect": "policy"
+    },
+    {
+      "input": "ties",
+      "expect": "tie"
+    },
+    {
+      "input": "pies",
+      "expect": "pie"
+    },
+    {
+      "input": "movies",
+      "expect": "movie"
+    },
+    {
+      "input": "cookies",
+      "expect": "cookie"
+    },
+    {
+      "input": "series",
+      "expect": "serie"
+    },
+    {
+      "input": "species",
+      "expect": "specie"
+    },
+    {
+      "input": "query",
+      "expect": "query"
+    },
+    {
+      "input": "library",
+      "expect": "library"
+    },
+    {
+      "input": "dependency",
+      "expect": "dependency"
+    },
+    {
+      "input": "movie",
+      "expect": "movie"
+    },
+    {
+      "input": "cookie",
+      "expect": "cookie"
+    },
+    {
+      "input": "fetch",
+      "expect": "get"
+    },
+    {
+      "input": "retrieve",
+      "expect": "get"
+    },
+    {
+      "input": "obtain",
+      "expect": "get"
+    },
+    {
+      "input": "remove",
+      "expect": "delete"
+    },
+    {
+      "input": "enumerate",
+      "expect": "list"
+    },
+    "fetches",
+    "unicode-ident",
+    "code",
+    "unicode",
+    "guid",
+    "uid",
+    "Redis",
+    "Ｒｅｄｉｓ",
+    "redis分布式锁",
+    "Redis 分布式锁",
+    "RetrievalAugmentedGeneration",
+    "HTTPServer",
+    "分布式锁实现",
+    "分布式锁",
+    "分布式计算",
+    "oauth2 pkce",
+    "organisation",
+    "analyse",
+    {
+      "input": "APIs",
+      "expect": "api",
+      "why": "R94 修复（2026-10-10）：大写复数缩写的 s 不是新词 —— 旧规则②会拆成 ap is ⇒ 查 api 匹配不到 APIs"
+    },
+    {
+      "input": "UUIDs",
+      "expect": "uuid",
+      "why": "同上族：缩写 + 复数 s"
+    },
+    {
+      "input": "XMLs",
+      "expect": "xml",
+      "why": "同上族：缩写 + 复数 s"
+    },
+    {
+      "input": "IOError",
+      "expect": "io error",
+      "why": "规则②本意：缩写块 + 真词（收紧后必须仍拆）"
+    },
+    {
+      "input": "XMLHttpRequest",
+      "expect": "xml http request",
+      "why": "规则②本意：连续多段缩写 + 真词"
+    },
+    {
+      "input": "retrievalAugmented",
+      "expect": "retrieval augmented",
+      "why": "规则①本意：小写→大写边界"
+    },
+    {
+      "input": "MyClass",
+      "expect": "my class",
+      "why": "规则①本意：小写→大写边界"
+    }
+  ],
+  "wholePairs": [
+    {
+      "hay": "guid",
+      "term": "uid",
+      "expect": false,
+      "why": "U-128 类：uid 不得命中 guid"
+    },
+    {
+      "hay": "unicode",
+      "term": "code",
+      "expect": false,
+      "why": "U-128 类：code 不得命中 unicode"
+    },
+    {
+      "hay": "distributed lock",
+      "term": "distributed lock",
+      "expect": true,
+      "why": "整短语命中"
+    },
+    {
+      "hay": "redis 分布式锁",
+      "term": "分布式锁",
+      "expect": true,
+      "why": "中英混接后 CJK 连续串命中"
+    },
+    {
+      "hay": "分布式计算",
+      "term": "分布式锁",
+      "expect": false,
+      "why": "C2 不越界：计算 ≠ 锁"
+    },
+    {
+      "hay": "springboot redislock",
+      "term": "redislock",
+      "expect": true,
+      "why": "连写标识符整词命中"
+    },
+    {
+      "hay": "myguid",
+      "term": "guid",
+      "expect": false,
+      "why": "左边界：myguid 内不得命中 guid"
+    },
+    {
+      "hay": "guid",
+      "term": "guid",
+      "expect": true,
+      "why": "自身命中"
+    },
+    {
+      "hay": "redis distributed lock",
+      "term": "distributed lock",
+      "expect": true,
+      "why": "短语在词边界内"
+    },
+    {
+      "hay": "redis过期",
+      "term": "redis",
+      "expect": true,
+      "why": "拉丁↔CJK 补空格后 redis 仍是整词"
+    },
+    {
+      "hay": "redis过期",
+      "term": "过期",
+      "expect": true,
+      "why": "补空格后 过期 左边界成立（★曾因 fixture 直传 raw 而误判 False）"
+    },
+    {
+      "hay": "queries",
+      "term": "query",
+      "expect": true,
+      "why": "3-2a①：queries → query，与单数同源（修复前 querie，永不互配）"
+    },
+    {
+      "hay": "query",
+      "term": "queries",
+      "expect": true,
+      "why": "3-2a① 双向等价"
+    },
+    {
+      "hay": "libraries",
+      "term": "library",
+      "expect": true,
+      "why": "3-2a① 词尾修复"
+    },
+    {
+      "hay": "dependencies",
+      "term": "dependency",
+      "expect": true,
+      "why": "3-2a① 词尾修复"
+    },
+    {
+      "hay": "proxies",
+      "term": "proxy",
+      "expect": true,
+      "why": "3-2a 默认路径（ies→y）"
+    },
+    {
+      "hay": "bodies",
+      "term": "body",
+      "expect": true,
+      "why": "3-2a 默认路径（ies→y）"
+    },
+    {
+      "hay": "policies",
+      "term": "policy",
+      "expect": true,
+      "why": "3-2a 默认路径（ies→y）"
+    },
+    {
+      "hay": "movies",
+      "term": "movie",
+      "expect": true,
+      "why": "3-2a③ 例外表：-ie 词干走「去尾 s」，不得变 movy"
+    },
+    {
+      "hay": "movie",
+      "term": "movies",
+      "expect": true,
+      "why": "3-2a③ 例外表双向"
+    },
+    {
+      "hay": "cookies",
+      "term": "cookie",
+      "expect": true,
+      "why": "3-2a③ 例外表"
+    },
+    {
+      "hay": "ties",
+      "term": "tie",
+      "expect": true,
+      "why": "3-2a 长度保护：ties(4) 不动，交给去尾 s 得 tie"
+    },
+    {
+      "hay": "pies",
+      "term": "pie",
+      "expect": true,
+      "why": "3-2a 长度保护"
+    },
+    {
+      "hay": "unicode",
+      "term": "code",
+      "expect": false,
+      "why": "3-2a② 回归：修复后仍不得引入子串回潮"
+    },
+    {
+      "hay": "guid",
+      "term": "uid",
+      "expect": false,
+      "why": "3-2a② 回归：整词边界不变"
+    },
+    {
+      "hay": "fetch",
+      "term": "get",
+      "expect": true,
+      "why": "3-2c：fetch → get 规范形"
+    },
+    {
+      "hay": "get",
+      "term": "fetch",
+      "expect": true,
+      "why": "3-2c 双向等价"
+    },
+    {
+      "hay": "retrieve",
+      "term": "get",
+      "expect": true,
+      "why": "3-2c 同组"
+    },
+    {
+      "hay": "obtain",
+      "term": "get",
+      "expect": true,
+      "why": "3-2c 同组"
+    },
+    {
+      "hay": "remove",
+      "term": "delete",
+      "expect": true,
+      "why": "3-2c 第二组"
+    },
+    {
+      "hay": "enumerate",
+      "term": "list",
+      "expect": true,
+      "why": "3-2c 第三组"
+    },
+    {
+      "hay": "fetchData",
+      "term": "get data",
+      "expect": true,
+      "why": "3-2c × 驼峰拆词：fetchData → get data"
+    },
+    {
+      "hay": "make",
+      "term": "do",
+      "expect": false,
+      "why": "3-2c② 泛词不入表：do/make 不得互配"
+    },
+    {
+      "hay": "create",
+      "term": "add",
+      "expect": false,
+      "why": "3-2c② 泛词不入表：create/add 不得互配"
+    },
+    {
+      "hay": "use",
+      "term": "apply",
+      "expect": false,
+      "why": "3-2c② 泛词不入表：use/apply 不得互配"
+    },
+    {
+      "hay": "fetches",
+      "term": "get",
+      "expect": false,
+      "why": "3-2c② 变位不入表：fetches 不映射（宁缺毋滥，已声明的边界）"
+    }
+  ]
+}

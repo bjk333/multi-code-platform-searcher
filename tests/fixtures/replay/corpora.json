@@ -1,0 +1,44 @@
+{
+  "_comment": "U-267 回放语料表（单一事实源）：录制器 tests/u267-record-replay-corpus.ps1 与门 tests/test-u267-replay-golden.test.mjs 都读这份，避免两处参数漂移。加语料 = 加一行 + 跑一次录制。env 里的 MCPS_DISABLE 只列**本机录不全**的引擎（不可达/403/超时），理由见 08-实施记录-B3.md §1.4；MCPS_ENGINE_DEADLINE 把这些引擎的逐源截止关掉，理由见 §1.5（时间决定分类）。",
+  "commonEnv": {
+    "MCPS_PROXY": "",
+    "MCPS_HEALTH": "0",
+    "MCPS_FIXED_NOW": "2026-10-26T00:00:00Z"
+  },
+  "corpora": [
+    {
+      "name": "research-serde",
+      "mode": "research",
+      "args": ["-NoEnvFile", "-ResearchSources", "-Keyword", "serde", "-Limit", "5", "-AsJson", "-NoCache"],
+      "env": {
+        "MCPS_DISABLE": "HF,DockerHub,arXiv,OpenAlex",
+        "MCPS_ENGINE_DEADLINE": "Npm=0,Crates=0,Maven=0,RubyGems=0,NuGet=0,Packagist=0,MCPRegistry=0,HackerNews=0,SE=0"
+      },
+      "expect": { "verdict": "full", "results": 38, "executed": ["Npm", "Crates", "Maven", "RubyGems", "NuGet", "Packagist", "MCPRegistry", "HackerNews", "SE"] }
+    },
+    {
+      "name": "repo-gitee",
+      "mode": "repo",
+      "args": ["-NoEnvFile", "-Platform", "Gitee", "-Keyword", "vue admin", "-Limit", "5", "-AsJson", "-NoCache"],
+      "env": { "MCPS_ENGINE_DEADLINE": "Gitee=0" },
+      "expect": { "verdict": "full", "results": 18, "executed": ["Gitee"] }
+    },
+    {
+      "name": "code-seexcerpts",
+      "mode": "code",
+      "args": ["-NoEnvFile", "-CodeEvidence", "-Keyword", "expire", "-Limit", "5", "-AsJson", "-NoCache"],
+      "env": {
+        "MCPS_DISABLE": "GitHubCode,GrepApp,Sourcegraph,GitLabBlobs",
+        "MCPS_ENGINE_DEADLINE": "SEExcerpts=0"
+      },
+      "expect": { "verdict": "full", "results": 5, "executed": ["SEExcerpts"] }
+    },
+    {
+      "name": "package-express",
+      "mode": "package",
+      "args": ["-NoEnvFile", "-Package", "npm:express", "-AsJson", "-NoCache"],
+      "env": { "MCPS_ENGINE_DEADLINE": "DepsDev=0" },
+      "expect": { "verdict": "full", "results": 1, "executed": ["DepsDev"] }
+    }
+  ]
+}

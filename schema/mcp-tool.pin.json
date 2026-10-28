@@ -1,0 +1,22 @@
+{
+  "_comment": "R96（远端 R2，2026-09-30）：工具定义哈希钉（rug-pull 防护）。按 transport+endpoint 记录 schema 的规范化 sha256（键排序、无空白的 JSON）；字段顺序变化不算漂移，任何语义变更（含 description）都算。改 schema 后须经人工复核再重钉，门 tests/test-r96-injection-invariants 检测漂移。 【2026-10-22 复审重钉】变更内容：`asjson.schema.json` 顶层新增 `modes`/`queryType`/`planSource`/`autoKeyword`/`counts` 五键（v1.47.3 载荷契约批，与 MCP search_auto 同构）并把它们加入 oneOf[payload].required；`results[]` 项补登记 `Archived`（v1.46.7 起就存在、schema 一直漏登记的既有漂移，由真实样本重生成后 R95-B 暴露）。`mcp-tool.json` 未改动。 【2026-10-22 v1.50.0 重钉】mcp-tool.json 的 `$comment` 改为指向已接线的 `schema/mcp-output.schema.json`（本文件退回 CLI 形状描述符）。仅注释变更；asjson.schema.json 无变化。 【2026-10-26 重钉】变更内容：asjson.schema.json 的 metrics 新增 RequestsSucceeded／RequestsFailed／RequestsReturned（三项都进 required），并改写 Requests 的 description —— 语义由「延迟袋条数」改为 attempted（B1-6／U-256）。这是语义变更而不是单纯加字段：老消费者把 Requests 当「已返回请求数」会读到更大的数，故旧口径另立 RequestsReturned 保留一个版本。mcp-tool.json 未改动。 【2026-10-26 重钉·B2-5】变更内容：`asjson.schema.json` 顶层新增 `execution` 对象（闭合、full required，`budgetMs`/`spentMs`/`reserveMs` 均 `minimum:0`，`skipped[]` 与 `pools[]` 各自闭合），并加入 oneOf[payload].required。语义是**新增能力字段**而非改既有字段；老消费者不受影响（本就是 additionalProperties:false 的闭合契约，新增即需同步）。`mcp-tool.json` 未改动。 【2026-10-26 重钉·B2-6】变更内容：`asjson.schema.json` 的 `execution` 块新增 `ledger` {runId,rows,path,written,error}（闭合、full required，`rows`/`written` 均 `minimum:0`，`path`/`error` 为 string|null），并加入 `execution.required`。语义是**新增汇总字段**而非改既有字段；`mcp-tool.json` 未改动。 【2026-10-26 重钉·B2-1 第 3/4】变更内容：`asjson.schema.json` 的 reasonCode 枚举 **12 → 13 值**（新增 `quota-exhausted`，共 4 处 enum：coverage.ReasonCodes、researchBatch.queries.ReasonCodes、researchBatch.queries.reasonCode、researchBatch.coverage.ReasonCodes），并把 `filtered` / `quota-exhausted` 补进两条 description 的枚举列举。语义是**扩枚举**而非改既有取值 —— 老消费者不受影响（原有 12 个码语义与拼写一字未动）。`mcp-tool.json` 未改动。",
+  "canonicalization": "JSON, object keys sorted recursively, no insignificant whitespace, UTF-8, sha256 hex",
+  "tools": [
+    {
+      "name": "multi_code_platform_search",
+      "transport": "stdio",
+      "endpoint": "multi-platform-searcher.ps1 -AsJson",
+      "files": [
+        {
+          "path": "schema/mcp-tool.json",
+          "sha256": "8357a9f5c670edc0077d97b22d4a076774b05de4762f32ed2d23552606473b3b"
+        },
+        {
+          "path": "schema/asjson.schema.json",
+          "sha256": "ffb0df9ae216ed8d6100595fff96f3234d1a07b84ff6372a2144d01c47a995fc"
+        }
+      ]
+    }
+  ],
+  "repinnedAt": "2026-10-26"
+}
