@@ -1,4 +1,5 @@
-﻿# Multi-Code-Platform Searcher PowerShell Tool（起版 v1.7.0 · 当前 v1.80.0）
+﻿# Multi-Code-Platform Searcher PowerShell Tool（起版 v1.7.0 · 当前 v1.81.0）
+# v1.81.0（2026-10-28 验收后续七）：**类型契约：python 拒的，-Serve 全都收** —— v1.79/1.80 只对账了"键名在不在"，值的类型全靠 PS 强转：`{"limit":"5"}` 收下当 5 用、`{"excludeArchived":"false"}` 被 `[bool]` 读成 `$True`（客户端的"别排除归档"变成"排除归档"）、`{"keyword":5}` 拿 5 当关键词真发了一轮检索。mcps.py 对这三例自 v1.46.7 起就抛 ValueError（U-202 C 也只测了 python 那一半）—— 同一条纪律在一个入口生效、在另一个入口躺了 34 个版本。实测 13 例里 12 例两层判定相反。现把白名单表从"键名数组"升级成"键名→类型"，分发前第二道闸（`Get-ServeTypeRejection`）按 python 的措辞逐字拒绝；U-295-I 用同一批用例喂两层，判决集与文案都要求**相等**。
 # v1.80.0（2026-10-28 验收后续六）：**同一份输入，两层判定相反** —— 请求键白名单 v1.79.0 用的是大小写不敏感的 `-notcontains`，于是 `{"op":"repo","keyword":"x","MinStars":5}` 在 `-Serve` 被放行（PS 属性读取也不敏感 ⇒ 值真被用上：实测 ok:true / count:27 / 11.9s），而 mcps.py 对同一个 `MinStars` 直接判 `unexpected arguments`。现 PS 侧改 `-cnotcontains` 逐字匹配（`op` 仍宽容，协议键没有 python 对端），U-295 加 H3 层：26 个 (op, 变体) 两层必须同判 + 全小写阴性对照 + 退回 `-notcontains` 必红。
 # v1.79.0（2026-10-28 验收后续五）：**拼错的请求键不许静默忽略** —— schema 的 `additionalProperties:false` 只被 MCP 层执行，`-Serve` 按分支逐个取 `$req.<key>`、其余键静默丢弃：`{"op":"repo","keyword":"x","minStar":5}`（少一个 s）会按默认 minStars=100 检索并返回 0 条，无任何告警 —— 与 v1.74.0 修掉的「拼错的命令行开关」同类，只是发生在 JSON 协议层。现抽 `Get-ServeKeyPolicy`/`Get-ServeUnknownKeys`（lib/serve.ps1），分发前拒绝并回显 allowed 名单；U-295 加 H 层（与 mcps.py 的 MCP_TOOL_OPS 逐 op 对账 + 真起 -Serve 三行探针 + 三变异）。
 # v1.78.0（2026-10-28 验收后续四）：**数值边界写了，两层都不看** —— inputSchema 的 min/max/default 此前既没被 build_tool_request 校验、-Serve 也只夹 limit/maxResults；minStars=-1 / activeWithin=40000 原样穿过。现统一 clamp（抽成纯函数 Get-ServeBoundedInt），U-295-G 两层真跑 + 三方对账。
@@ -9,8 +10,7 @@
 # v1.72.0（2026-10-28 全量验收整改 F2/F3）：**判据要能分辨它想分辨的东西** —— ① `test-docs` 的字面转义判据原来全文 Contains，分不清"文档在描述一条正则"（合法）与"换行真被替换成字符"（损伤），v1.70.0 就带着这条误伤发布；现改为围栏/行内代码段内算示例、正文才算工件，并抽成纯函数由新门 U-292 跑真值表 + 3 条可执行变异。② `publish-skill.ps1` 补**根级退役**：`$PUB_EXCLUDE_EXACT` 里登记"有意不随发"的根级文件（`说明书.md`、`stress-frontend-ui.ps1`）在目标侧也会被清掉（U-279 原来只碰受管目录）。
 # v1.71.0（2026-10-28 全量验收整改 F1）：**PS 套件也进发布凭证** —— `tests/run-tests.ps1` 落 `.ps-gate.json`，`scripts/publish-skill.ps1` 的 `Test-PsGate` 默认拒绝（缺文件/有红/`-LocalOnly`/版本不符/超龄）；另修 `SKILL.md` 里被 `test-docs` 判红的字面转义（v1.70.0 带着这条红发布）。
 # v1.70.0（2026-10-27 结构批 B3-17）：**三道静态门改跑产品** —— 规划器判词（真跑 6 次）、Gitee 相关度地板（2 条夹具臂）、源码优先/文档兜底（CLI 回放）。★三处都是"门在自说自话"：规划器门只 grep 源码词表（词在词表里 ≠ 词生效）、Gitee 门在 JS 里把过滤规则重写了一遍（产品改口径它不跟着变）、发布器 `-StampOnly` 配 `-RegenerateMirror` 会一个戳都不盖却 exit 0（静默空操作，已 fail-closed 拒绝）。
-# v1.68–v1.69（B3-15/B3-16）：主流程首次有行为门（U-182 零产出告警 / U-115 缺凭据分列）；先修回放接缝（500 曾被当 200 ⇒ "源挂了"说成"零命中"）；POST 正文改 [ordered]；U-120 verdict 顺序 + rc、U-175 AND 注解/"只发一次"改跑产品（partial ⇒ rc=0，none/no-engines ⇒ 3/4）。
-# v1.62–v1.67（B3-9..B3-14）：第四类传输、封套类状态码分档、`"$_"` 是响应正文（PS7）、GitLabBlobs 发现链 5 条臂 + 夹具接缝自包含、26 个引擎全部有行为臂（含 HF/DeepSeek）与元门 U-274-H、证据外置工具化 + provenance 留 3 份 —— 详见 references/脚本变更历史.md。
+# v1.62–v1.69（B3-9..B3-16）：第四类传输与封套类状态码分档、`"$_"` 是响应正文（PS7）、26 个引擎全部有行为臂 + 元门 U-274-H、主流程首次有行为门（U-182 零产出 / U-115 缺凭据 / U-120 verdict+rc / U-175 AND 注解）、证据外置工具化 + provenance 留 3 份 —— 详见 references/脚本变更历史.md。
 # B3-2（v1.54.0，2026-10-26）：模块拆分。本文件只留「入口」：参数 -> 路径解析 -> 加载 lib/ -> 主流程。判据是行为等价而不是「看起来更整齐」：拆分前后 tests/test-u267-replay-golden.test.mjs 的 4 份语料（repo / code / research / package）必须逐字节一致（除已声明的时序字段）。
 #
 #   模块地图（加载顺序 = 下表顺序；每个模块只定义、无顶层副作用）：
@@ -157,7 +157,7 @@ foreach ($__m in @('config', 'core', 'net', 'http', 'quality', 'engines', 'docto
     if (Test-Path -LiteralPath $__p -PathType Leaf) { . $__p }
 }
 
-$VERSION = "1.80.0"
+$VERSION = "1.81.0"
 
 if (-not $NoEnvFile) {
     # v1.45.8：cwd 的 .env 只收令牌键；配置类（MCPS_* / NO_PROXY）只认技能目录那份。
@@ -440,8 +440,8 @@ if ($Serve) {
         try {
             $req = $line | ConvertFrom-Json
             $op = [string]$req.op
-            # v1.79.0：请求键白名单 —— schema 的 additionalProperties:false 此前只被 MCP 层执行，`-Serve` 静默丢弃未知键（拼错 minStars 就按默认 100 检索、0 条且无告警）⇒ 在**分发前**拒，并回显 allowed 名单。
-            $rej = Get-ServeKeyRejection -Req $req -Op $op -Ms $sw.ElapsedMilliseconds; if ($null -ne $rej) { Write-ServeLine $rej; continue }
+            # v1.79.0 键名白名单（拼错 minStars 曾按默认 100 检索、0 条无告警）+ v1.81.0 值的类型（`"limit":"5"`、`"excludeArchived":"false"` 曾被 PS 强转收下）—— 两道闸都在**分发前**拒，并回显 allowed 名单。
+            $rej = Get-ServeRequestRejection -Req $req -Op $op -Ms $sw.ElapsedMilliseconds; if ($null -ne $rej) { Write-ServeLine $rej; continue }
             $kw = [string]$req.keyword
             # limit = **每源页大小**（与 CLI 的 -Limit 同义）；maxResults = 返回条数上限（0=不截断）。
             #   ★别合并：-Limit 从不是"最终条数"（聚合型会超出）；混用会被误读成"只该有 5 条"。v1.78.0 起四个数值参数统一走 Get-ServeBoundedInt（边界 = schema 的 min/max；U-295-G 三方对账）。

@@ -1,10 +1,10 @@
 ---
 name: "multi-code-platform-searcher"
-license: MIT
+license: MPL-2.0
 compatibility: "**实测**：Windows（PowerShell 5.1 与 pwsh 7）、Linux（pwsh 7，容器实跑）；macOS 未实跑。运行时：Windows PowerShell 5.1 或 PowerShell 7+（pwsh）；可选 Node.js ≥18（node 引擎 / Node 门禁）；需可访问 GitHub、Gitee、GitLab、Codeberg 与研究信源公网 API；令牌经 .env 提供（GITHUB_TOKEN / GITLAB_TOKEN / DEEPSEEK_API_KEY 可选，前两个缺失时对应源记 blocked 不静默，DEEPSEEK_API_KEY 缺失时该付费源整体不进 Requested）"
 description: "统一技术调研与代码仓库搜索：规划官方文档、论文、博客、论坛等来源的检索计划，并发现 GitHub、Gitee、GitLab 上的相似项目；代码证据用 GitHub 第一方 /search/code（主引擎）、GitLab /search?scope=blobs（复用 GITLAB_TOKEN）、grep.app、Stack Exchange 社区实现证据（SEExcerpts）、Sourcegraph（兜底）查找公开实现，-RepoScope 可在指定公开仓库内检索（searchcode）；另支持 Hugging Face Hub（models/datasets/spaces）、arXiv 论文、Stack Exchange 技术问答、Hacker News 社区讨论、**DeepSeek 网页搜索（DeepSeek 官方 Search API，2026-10-17 上线；需 DEEPSEEK_API_KEY，未配置时该源不进 Requested）** 与 npm/crates.io/Maven 包注册表（-ResearchSources 开关）作为 AI/学术/社区研究信源；-Auto 由 query-planner 自动分类并一次进程内跑多模式；另有 `-Package \"<生态>:<包名>\"` 精确包元数据（deps.dev 免 key：默认版本/许可证/发布时间/已知安全公告数）。"
 metadata:
-  version: "1.80.0"
+  version: "1.81.0"
 ---
 
 # 技术调研与多代码平台搜索
@@ -41,7 +41,9 @@ metadata:
   `bin/` 是兼容优先路径、PATH 为兜底；缺二进制时不要把本地 0 命中写成源码不存在。`tools/bin/README.md` 也链回本段。
 - **数据外发与隐私（v1.53.21）**：本技能只把**检索词 / 过滤条件 / 仓库与包坐标**发给被你选中的公开源；**不上传**本地文件内容，**无遥测**、无自建上报端点。
   完整域名清单（从代码枚举）、令牌处理、缓存留存与 DeepSeek 计费归属见 `references/数据与隐私.md`。注意：`-Doctor` 会向各研究源发固定占位词 `__mcps_probe__` 的轻量探活；只加 `-LocalCodeSearch` **不等于零外发**（本地 0 命中会降级远程）。
-- **★★ B/A 发布基线（v1.80.0，2026-10-28：同一份输入，两层判定相反）**：
+- **★★ B/A 发布基线（v1.81.0，2026-10-28：类型契约 · python 拒的，`-Serve` 全都收）**：
+  v1.79/1.80 只对账键名，值类型靠 PS 强转：`{"limit":"5"}` 收下当 5 用、`{"excludeArchived":"false"}` 被 `[bool]` 读成 `$True`（="false" 读成 true）、`{"keyword":5}` 拿 5 当关键词真发一轮。mcps.py 自 v1.46.7 就抛（U-202 C 只测一侧）。现白名单升级为「键名→类型」+ 分发前第二道闸，措辞同 python；U-295-I 27 例喂两层，判决文案须相等，5.1/7 各跑。仓内指针见 `reports/gates/`，**A = B = v1.81.0**。
+- **★★ B/A 上一基线（v1.80.0，2026-10-28：同一份输入，两层判定相反）**：
   请求键白名单 v1.79.0 用大小写不敏感的 `-notcontains`：`{"op":"repo","keyword":"x","MinStars":5}` 在 `-Serve` 被放行（PS 属性读取也不敏感 ⇒ 值真被用上），mcps.py 却判 `unexpected arguments`；现改 `-cnotcontains` 逐字匹配（`op` 仍宽容），U-295-H3 让 26 个 (op,变体) 两层同判 + 全小写对照 + 退回必红。仓内指针见 `reports/gates/`，**A = B = v1.80.0**。
 - **★★ B/A 上一基线（v1.79.0，2026-10-28：拼错的请求键不许静默忽略）**：
   schema 的 `additionalProperties:false` 只被 MCP 层执行，`-Serve` 按分支逐个取 `$req.<key>`、其余键**静默丢弃**：`{"op":"repo","keyword":"x","minStar":5}`（少一个 s）按默认 minStars=100 检索、返回 0 条且无告警（v1.74.0 的「拼错的开关」在 JSON 层重演）。
@@ -58,10 +60,8 @@ metadata:
   9d 与 U-60 都量「个数」，而改名与对换不改个数（`-UseRegexp`→`-UseRegex`、删一行补一行照绿）。现 9d 走纯函数 `Compare-ParamSurface` 两向点名，U-295 五层覆盖集合 / 三条"计数相等但集合不等"的变异 / 死参数 / 接线自检 / **跨实现等价**。**A = B = v1.75.0**；读数见 `_验收_全量_20261028/`。
 - **★★ B/A 上一基线（v1.74.0，2026-10-28：全量验收 F8 · 拼错的开关不再被静默忽略）**：
   简单 `param()` 块（无 `[CmdletBinding()]`）会把未声明的具名参数丢进 `$args` 后**静默丢弃**（`-CodeSearch`/`-Zzzz` 都 rc=0）；
-  现声明 `[CmdletBinding(PositionalBinding = $false)]`，未知具名参数与裸位置参数在**绑定阶段**即失败（双运行时 FQID = `NamedParameterNotFound` / `PositionalParameterNotFound`），U-294 四层 + 反向控制守住。
-  读数与未覆盖项见 `_验收_全量_20261028/`。**A = B = v1.74.0**。
-- **★★ B/A 上一基线（v1.73.0，2026-10-28：验收收口 · 副本"多余文件"第一次有观测面）**：
-  病灶是"只查一个方向"：U-138 只查「清单 → A」（发全了没），**没有门查「A → 清单」**，于是 `.github/workflows/*.yml`（从不在发货形态里）能留成两周前的旧版、`说明书.md` 能停在一个月前 —— 不报错、不影响哈希、不进任何报告。
+  现声明 `[CmdletBinding(PositionalBinding = $false)]`，未知具名参数与裸位置参数在**绑定阶段**即失败（双运行时 FQID = `NamedParameterNotFound` / `PositionalParameterNotFound`），U-294 四层 + 反向控制守住。读数与未覆盖项见 `_验收_全量_20261028/`。**A = B = v1.74.0**。
+- **★★ B/A 上一基线（v1.73.0，2026-10-28：验收收口 · 副本"多余文件"第一次有观测面）**：病灶是"只查一个方向"：U-138 只查「清单 → A」（发全了没），**没有门查「A → 清单」**，于是 `.github/workflows/*.yml`（从不在发货形态里）能留成两周前的旧版、`说明书.md` 能停在一个月前 —— 不报错、不影响哈希、不进任何报告。
   现 U-293 真遍历 A，断言「清单外文件 ⊆ 已声明白名单」；白名单四档逐项与发布器对账并各带负例，"遍历到的文件数 ≥ 清单条目数"当执行标记；另给 U-292 标 `gate-profile: installed`，让新判据在**安装副本**上也真的跑。读数见 `_验收_全量_20261028/`，**A = B = v1.73.0**。
 - **★★ B/A 上一基线（v1.72.0，2026-10-28：全量验收整改 F2/F3 · 判据带上下文 + 根级退役）**：
   两处都是"判据与它要防的事不是一回事"：① `test-docs` 的字面转义判据原来全文查两个字符，分不清"文档在描述一条正则"（合法且必要）与"换行真被替换成字符"（损伤），v1.70.0 就带着这条误伤发布；

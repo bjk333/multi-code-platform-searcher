@@ -713,7 +713,7 @@ test('U-295-G-neg: 拆夹紧 / 收窄声明 / 删调用点 三种变异必红，
     // ① 纯函数拆掉下限夹紧 ⇒ G1 的 PS 层必须红（python 层不受影响）
     const probeSrc = fs.readFileSync(ENTRY, 'utf8');
     const libSrc0 = fs.readFileSync(path.join(ROOT, 'lib', 'serve.ps1'), 'utf8');
-    assert.ok(libSrc0.includes('if ($v -lt $Min) { return $Min }'), '纯函数锚点漂了（lib/serve.ps1 里的下限夹紧语句已改写法）');
+    assert.ok(libSrc0.includes('if ($d -lt [decimal]$Min) { return $Min }'), '纯函数锚点漂了（lib/serve.ps1 里的下限夹紧语句已改写法）');
     const broken = fs.mkdtempSync(path.join(os.tmpdir(), 'u295g-broken-'));
     try {
       const brokenLib = path.join(broken, 'lib');
@@ -721,7 +721,7 @@ test('U-295-G-neg: 拆夹紧 / 收窄声明 / 删调用点 三种变异必红，
       // 复制入口同目录的 lib/*.ps1，只把 serve.ps1 里的下限夹紧拆掉
       for (const f of fs.readdirSync(path.join(ROOT, 'lib'))) {
         const src = fs.readFileSync(path.join(ROOT, 'lib', f), 'utf8');
-        fs.writeFileSync(path.join(brokenLib, f), f === 'serve.ps1' ? src.replace('if ($v -lt $Min) { return $Min }', 'if ($false) { return $Min }') : src, 'utf8');
+        fs.writeFileSync(path.join(brokenLib, f), f === 'serve.ps1' ? src.replace('if ($d -lt [decimal]$Min) { return $Min }', 'if ($false) { return $Min }') : src, 'utf8');
       }
       const entryCopy = path.join(broken, 'multi-platform-searcher.ps1');
       fs.writeFileSync(entryCopy, probeSrc, 'utf8');
@@ -777,7 +777,7 @@ test('U-295-G-neg: 拆夹紧 / 收窄声明 / 删调用点 三种变异必红，
 //   H2 行为：真起 `-Serve` 喂三行 —— 未知键(拒+点名+allowed 空) / 合规(必须过) / 拼错键(拒+点名+未触网)。
 //     "合规那行必须过"是阴性对照：没有它，"一律拒掉"也能满足另外两条。
 
-const KEY_LINE = ENTRY_SRC.split(/\r?\n/).find((l) => l.includes('Get-ServeKeyRejection -Req'));
+const KEY_LINE = ENTRY_SRC.split(/\r?\n/).find((l) => l.includes('Get-ServeRequestRejection -Req'));
 
 /** op → python 侧白名单（{op: [keys]}），由 realMCP() 的 {tool: {op, keys}} 反转而来 */
 async function opsOfMcp() {
@@ -792,7 +792,9 @@ function psKeyScript(entryPath, ops) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'u295h-ps-'));
   const probe = path.join(tmp, 'probe.ps1');
   const list = ops.map((o) => `'${o}'`).join(', ');
-  fs.writeFileSync(probe, [
+  // ★BOM 不是装饰：探针里要点源**带中文路径**的入口，PS 5.1 读无 BOM 的 .ps1 会按 GBK 解码 ⇒
+  //   路径变乱码、点源失败、函数全都不存在，探针会"安静地"返回一堆 $null（v1.81.0 实测踩到）。
+  fs.writeFileSync(probe, '\uFEFF' + [
     '$env:MCPS_NO_MAIN = "1"',
     `. '${entryPath.replace(/'/g, "''")}'`,
     '$out = [ordered]@{}',
@@ -834,7 +836,7 @@ async function readPsKeys(entryPath, ops) {
 }
 
 /** 真起一次 -Serve，喂若干行（pwsh 优先，回退 Windows PowerShell） */
-function serveLines(entryPath, lines, timeoutMs = 180000) {
+function serveLines(entryPath, lines, timeoutMs = 180000, only = null) {
   const once = (exe) => new Promise((resolve, reject) => {
     const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-File', entryPath, '-NoEnvFile', '-Serve'], {
       cwd: path.dirname(entryPath), windowsHide: true,
@@ -851,7 +853,7 @@ function serveLines(entryPath, lines, timeoutMs = 180000) {
   });
   return (async () => {
     let last = null;
-    for (const exe of ['pwsh', 'powershell']) {
+    for (const exe of (only ? [only] : ['pwsh', 'powershell'])) {
       try { return await once(exe); } catch (e) { last = e; }
     }
     throw last;
@@ -938,8 +940,8 @@ test('U-295-H-neg: 拆接线 / 表里拼错 / 表比代码宽 三种变异必红
 
     // ② 表里拼错一个键（minStars → minStar）⇒ H1 的"缺"必须点名
     const typoEntry = clone('typo', null, (s) => {
-      assert.ok(s.includes("'minStars', 'activeWithin'"), '白名单锚点漂了');
-      return s.replace("'minStars', 'activeWithin'", "'minStar', 'activeWithin'");
+      assert.ok(s.includes("platforms = 'str'; language = 'str'; minStars = 'int'"), '白名单锚点漂了');
+      return s.replace("platforms = 'str'; language = 'str'; minStars = 'int'", "platforms = 'str'; language = 'str'; minStar = 'int'");
     });
     const pyByOp = await opsOfMcp();
     const ops = [...new Set([...SERVE_OPS, ...Object.keys(pyByOp)])];
@@ -948,8 +950,8 @@ test('U-295-H-neg: 拆接线 / 表里拼错 / 表比代码宽 三种变异必红
 
     // ③ 表比代码宽（给 ping 加一个 verbose）⇒ H1 的"多"必须点名
     const wideEntry = clone('wide', null, (s) => {
-      assert.ok(s.includes("'ping'     = @()"), 'ping 白名单锚点漂了');
-      return s.replace("'ping'     = @()", "'ping'     = @('verbose')");
+      assert.ok(s.includes("'ping'     = @{}"), 'ping 白名单锚点漂了');
+      return s.replace("'ping'     = @{}", "'ping'     = @{ verbose = 'str' }");
     });
     const v3 = keyViolations(await readPsKeys(wideEntry, ops), pyByOp);
     assert.ok(v3.some((x) => x.startsWith('ping') && x.includes('多') && x.includes('verbose')), '表比代码宽时 H1 没点名：' + v3.join(' | '));
@@ -1108,6 +1110,230 @@ test('U-295-H3: 键名大小写 —— -Serve 与 MCP 层对同一批变体必�
     }
     const mut = await readUnknowns(path.join(dst, 'multi-platform-searcher.ps1'), [{ id: 'u', op: 'repo', req: { op: 'repo', MinStars: 5 } }]);
     assert.deepEqual(mut.u, [], '退回大小写不敏感后 MinStars 仍被判未知键 ⇒ 这条判据没在量比较符');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// ---------- I：值的类型 —— 两层对同一输入必须同判（v1.81.0） ----------
+//
+// 病灶：v1.79/1.80 只对账了"键名在不在"，值的类型全靠 PS 强转兜 ——
+//   `{"limit":"5"}` 收下当 5 用；`{"excludeArchived":"false"}` 更糟，`[bool]"false"` 是 $True，
+//   客户端说"别排除归档"被读成"排除归档"；`{"keyword":5}` 把 5 当关键词**真的发了一轮检索**
+//   （实测 ok:true / count:27 / 11.9s）。mcps.py 对这三例自 v1.46.7 起就抛 ValueError
+//   （U-202 C 也断言了「"true" 字符串必须拒绝，静默转换会把 false 变 True」），但那条门只测了 python
+//   那一半 —— 同一条纪律在一个入口生效、在另一个入口躺了 34 个版本。实测 13 例里 12 例两层判定相反。
+//
+// 判据：
+//   I1 矩阵：27 个 (op, 请求) 同时喂 python 的 `build_tool_request` 与 PS 的 `Get-ServeTypeRejection`，
+//     **判决与文案都要求相等**；两个运行时各跑一遍 —— 类型映射本来就不同（5.1 给 Int32/Decimal、
+//     7 给 Int64/BigInteger），只跑一个运行时的绿没有覆盖域（纪律 #9；本层首版就因为这个让 20 位整数
+//     在 5.1 被误判、在 7 被放行 —— 27 例里只错 1 例，单运行时看不出来）。
+//   I2 行为：真起 `-Serve` 五行，全在**分发前**被判 ⇒ 零网络（每行还要求 ms<5000，真发请求要 10s+）。
+//     第 2 行是阴性对照：类型合法 ⇒ 必须走到分发并报 "unknown platforms"。
+//     没有它，"一律拒"也能满足另外四行。
+//   I-neg：整数判定退回 `[int]$v` 强转 / 表里把 bool 改成 str 必红；只改注释不红。
+
+const TYPE_TOOL = { repo: 'search_repositories', auto: 'search_auto', code: 'search_code', research: 'research', package: 'package_lookup', ping: 'ping' };
+
+/** 27 个 (op, 请求)。每一条都是"手写客户端可能发出来的形状"，不是凭空造的类型。 */
+const TYPE_CASES = [
+  { id: 'limit-str', op: 'repo', req: { keyword: 'x', limit: '5' } },
+  { id: 'limit-float', op: 'repo', req: { keyword: 'x', limit: 5.0 } },
+  { id: 'limit-bool', op: 'repo', req: { keyword: 'x', limit: true } },
+  { id: 'maxresult-str', op: 'repo', req: { keyword: 'x', maxResults: '0' } },
+  { id: 'minstars-str', op: 'repo', req: { keyword: 'x', minStars: '5' } },
+  { id: 'minstars-bool', op: 'repo', req: { keyword: 'x', minStars: true } },
+  { id: 'activewithin-str', op: 'repo', req: { keyword: 'x', activeWithin: '30' } },
+  { id: 'excl-strfalse', op: 'repo', req: { keyword: 'x', excludeArchived: 'false' } },
+  { id: 'excl-num', op: 'repo', req: { keyword: 'x', excludeArchived: 0 } },
+  { id: 'keyword-num', op: 'repo', req: { keyword: 5 } },
+  { id: 'keyword-empty', op: 'repo', req: { keyword: '' } },
+  { id: 'keyword-blank', op: 'repo', req: { keyword: '   ' } },
+  { id: 'keyword-missing', op: 'repo', req: { platforms: 'GitHub' } },
+  { id: 'platforms-num', op: 'repo', req: { keyword: 'x', platforms: 5 } },
+  { id: 'language-bool', op: 'repo', req: { keyword: 'x', language: false } },
+  { id: 'reposcope-num', op: 'code', req: { keyword: 'x', repoScope: 5 } },
+  { id: 'pathfilter-num', op: 'code', req: { keyword: 'x', pathFilter: 5 } },
+  { id: 'autosite-num', op: 'auto', req: { keyword: 'x', site: 5 } },
+  { id: 'ressite-num', op: 'research', req: { keyword: 'x', site: 5 } },
+  { id: 'packages-num', op: 'package', req: { packages: 5 } },
+  { id: 'packages-missing', op: 'package', req: {} },
+  { id: 'limit-huge', op: 'repo', req: { keyword: 'x', limit: 99999999999999999999 } },
+  { id: 'limit-neg', op: 'repo', req: { keyword: 'x', limit: -3 } },
+  { id: 'ok-full', op: 'repo', req: { keyword: 'x', limit: 5, maxResults: 0, minStars: 0, activeWithin: 0, excludeArchived: true, platforms: 'GitHub', language: 'Go', license: 'mit' } },
+  { id: 'ok-auto', op: 'auto', req: { keyword: 'x' } },
+  { id: 'ok-code', op: 'code', req: { keyword: 'x', repoScope: 'owner/repo', pathFilter: 'src/' } },
+  { id: 'ok-package', op: 'package', req: { packages: 'npm:express' } },
+];
+
+/** python 侧判决（{id: {ok, err}}）。跑的是真 `build_tool_request`，不是复述它的规则。 */
+async function readPyTypeVerdicts() {
+  const payload = TYPE_CASES.map((c) => ({ id: c.id, tool: TYPE_TOOL[c.op], req: c.req }));
+  const rows = await runPy(`
+import json, sys
+sys.path.insert(0, ${JSON.stringify(ROOT)})
+import mcps
+cases = json.loads(r'''${JSON.stringify(payload)}''')
+out = []
+for c in cases:
+    try:
+        r = mcps.build_tool_request(c["tool"], c["req"])
+        out.append({"id": c["id"], "ok": True, "err": "", "limit": r.get("limit")})
+    except Exception as e:
+        out.append({"id": c["id"], "ok": False, "err": str(e)})
+print(json.dumps(out, ensure_ascii=False))
+`);
+  assert.equal(rows.length, TYPE_CASES.length, `python 只回了 ${rows.length}/${TYPE_CASES.length} 条判定`);
+  return Object.fromEntries(rows.map((r) => [r.id, r]));
+}
+
+/** PS 侧：dot-source 入口后逐例调 `Get-ServeTypeRejection`（不触网、不起进程池）。 */
+async function readPsTypeVerdicts(entryPath, exe) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'u295i-'));
+  try {
+    const casesFile = path.join(tmp, 'cases.json');
+    fs.writeFileSync(casesFile, JSON.stringify(TYPE_CASES.map((c) => ({ id: c.id, op: c.op, req: { op: c.op, ...c.req } }))), 'utf8');
+    const probe = path.join(tmp, 'probe.ps1');
+    // ★BOM：探针里点源带中文路径的入口，PS 5.1 读无 BOM 的 .ps1 会按 GBK 解码 ⇒ 点源失败、函数全不存在
+    fs.writeFileSync(probe, '\uFEFF' + [
+      '$env:MCPS_NO_MAIN = "1"',
+      `. '${entryPath.replace(/'/g, "''")}'`,
+      `$cases = Get-Content -Raw -Encoding UTF8 '${casesFile.replace(/'/g, "''")}' | ConvertFrom-Json`,
+      '$out = @()',
+      'foreach ($c in $cases) {',
+      '  $r = Get-ServeTypeRejection -Req $c.req -Op $c.op -Ms 0',
+      '  $out += [PSCustomObject]@{ id = $c.id; ok = [bool]($null -eq $r); err = $(if ($null -eq $r) { "" } else { [string]$r.error }) }',
+      '}',
+      'ConvertTo-Json -InputObject $out -Compress -Depth 4',
+      '',
+    ].join('\r\n'), 'utf8');
+    const r = await runPsExe(exe, ['-NoProfile', '-NonInteractive', '-File', probe]);
+    assert.equal(r.st, 0, `${exe} 类型探针 rc=${r.st}: ${(r.err || '').slice(0, 400)}`);
+    const line = (r.out || '').split(/\r?\n/).filter((x) => x.trim().startsWith('[')).pop();
+    assert.ok(line, `${exe} 类型探针没有输出 JSON：${(r.out || '').slice(0, 300)}`);
+    return Object.fromEntries(JSON.parse(line).map((x) => [x.id, x]));
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
+/** 起指定可执行文件（I 层要分别跑 5.1 与 7；runPwsh 只会挑一个） */
+function runPsExe(exe, args, timeoutMs = 180000) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(exe, args, { cwd: ROOT, windowsHide: true });
+    let out = '', err = '';
+    child.stdout.on('data', (b) => { out += b.toString('utf8'); });
+    child.stderr.on('data', (b) => { err += b.toString('utf8'); });
+    child.once('error', (e) => reject(new Error(`spawn ${exe} 失败：${e.message}`)));
+    const t = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* 已退出 */ } }, timeoutMs);
+    child.once('close', (st) => { clearTimeout(t); resolve({ st, out, err }); });
+  });
+}
+
+/** I1 判定（纯函数，真仓与变异共用）：判决 + 文案，逐例相等 */
+function typeViolations(pyRows, psRows) {
+  const bad = [];
+  for (const c of TYPE_CASES) {
+    const py = pyRows[c.id];
+    const ps = psRows[c.id];
+    if (!py) { bad.push(`${c.id}: python 没回判定`); continue; }
+    if (!ps) { bad.push(`${c.id}: PS 没回判定`); continue; }
+    if (Boolean(py.ok) !== Boolean(ps.ok)) {
+      bad.push(`${c.id}: 判决相反 —— python ${py.ok ? 'ACCEPT' : `REJECT(${py.err})`} / -Serve ${ps.ok ? 'ACCEPT' : `REJECT(${ps.err})`}`);
+      continue;
+    }
+    if (!py.ok && String(py.err) !== String(ps.err)) bad.push(`${c.id}: 文案不同 —— python "${py.err}" / -Serve "${ps.err}"`);
+  }
+  return bad;
+}
+
+const I2_LINES = [
+  '{"op":"repo","keyword":"x","limit":"5","platforms":"NOPE"}',                    // 类型错：必须压过平台校验
+  '{"op":"repo","keyword":"x","limit":5,"platforms":"NOPE"}',                       // 阴性对照：类型合法 ⇒ 走到分发
+  '{"op":"repo","keyword":"x","excludeArchived":"false","platforms":"NOPE"}',       // 最贵的一格：false 曾被读成 true
+  '{"op":"repo","keyword":5,"platforms":"NOPE"}',                                   // 5 曾被当关键词真的去搜
+  '{"op":"repo","keyword":"x","limit":99999999999999999999,"platforms":"NOPE"}',    // 20 位整数：5.1 曾误判成非整数
+];
+
+/** I2 判定（纯函数）：五行响应必须"四拒 + 一放行到分发"，且全都没触网 */
+function serveTypeVerdict(rows) {
+  const bad = [];
+  if (rows.length !== I2_LINES.length) return [`响应行数 ${rows.length} ≠ ${I2_LINES.length}（进程没跑完 / 少了一行响应）`];
+  const [limStr, ok, excl, kwNum, huge] = rows;
+  if (limStr.ok !== false || String(limStr.error) !== 'limit must be an integer') bad.push('limit:"5" 没在分发前被拒：' + JSON.stringify(limStr).slice(0, 140));
+  if (ok.ok !== false || !/^unknown platforms/.test(String(ok.error))) bad.push('合法类型没走到分发（阴性对照失败）：' + JSON.stringify(ok).slice(0, 140));
+  if (excl.ok !== false || String(excl.error) !== 'excludeArchived must be a boolean') bad.push('excludeArchived:"false" 没被拒：' + JSON.stringify(excl).slice(0, 140));
+  if (kwNum.ok !== false || String(kwNum.error) !== 'keyword is required (non-empty string)') bad.push('keyword:5 没被拒：' + JSON.stringify(kwNum).slice(0, 140));
+  if (huge.ok !== false || !/^unknown platforms/.test(String(huge.error))) bad.push('20 位整数被误判成"不是整数"：' + JSON.stringify(huge).slice(0, 140));
+  rows.forEach((r, i) => { if (!(typeof r.ms === 'number' && r.ms < 5000)) bad.push(`第 ${i} 行 ms=${r.ms} —— 类型闸没在分发前拦（真发请求要 10s+）`); });
+  return bad;
+}
+
+test('U-295-I1: 值的类型 —— python 与 -Serve 的判决和文案逐例相等（5.1 / 7 各跑一遍）', async () => {
+  const py = await readPyTypeVerdicts();
+  for (const exe of ['powershell', 'pwsh']) {
+    const ps = await readPsTypeVerdicts(ENTRY, exe);
+    const v = typeViolations(py, ps);
+    assert.deepEqual(v, [], `${exe} 与 python 的类型判定不一致：\n  ${v.join('\n  ')}`);
+  }
+  // 阳性对照：矩阵里必须有真被 python 拒的用例，否则"两边都 ACCEPT"也能全绿
+  const rejected = Object.values(py).filter((x) => !x.ok).length;
+  assert.ok(rejected >= 15, `python 只拒了 ${rejected}/${TYPE_CASES.length} 例 —— 矩阵退化了`);
+});
+
+test('U-295-I2: 真起 -Serve —— 类型错在分发前被拒（零网络），类型合法必须走到分发', async () => {
+  for (const exe of ['powershell', 'pwsh']) {
+    const r = await serveLines(ENTRY, I2_LINES, 180000, exe);
+    assert.equal(r.st, 0, `${exe} -Serve rc=${r.st}: ${(r.err || '').slice(-400)}`);
+    const v = serveTypeVerdict(rowsOf(r.out));
+    assert.deepEqual(v, [], `${exe} 的类型闸没在真进程里生效：\n  ${v.join('\n  ')}`);
+  }
+});
+
+test('U-295-I-neg: 整数判定退回强转 / 表里把 bool 写成 str 必红，只改注释不红', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'u295i-neg-'));
+  const lib0 = fs.readFileSync(path.join(ROOT, 'lib', 'serve.ps1'), 'utf8');
+  const clone = (name, patchLib) => {
+    const dst = path.join(tmp, name);
+    fs.mkdirSync(path.join(dst, 'lib'), { recursive: true });
+    fs.mkdirSync(path.join(dst, 'engines'), { recursive: true });
+    fs.writeFileSync(path.join(dst, 'multi-platform-searcher.ps1'), ENTRY_SRC, 'utf8');
+    for (const f of fs.readdirSync(path.join(ROOT, 'lib'))) {
+      const s = fs.readFileSync(path.join(ROOT, 'lib', f), 'utf8');
+      fs.writeFileSync(path.join(dst, 'lib', f), f === 'serve.ps1' ? patchLib(s) : s, 'utf8');
+    }
+    for (const f of fs.readdirSync(path.join(ROOT, 'engines'))) fs.copyFileSync(path.join(ROOT, 'engines', f), path.join(dst, 'engines', f));
+    return path.join(dst, 'multi-platform-searcher.ps1');
+  };
+  try {
+    const py = await readPyTypeVerdicts();
+
+    // ① 退回旧口径：整数判定 = "PS 能强转成 int 就算"（v1.78 之前就是这样）
+    const GOOD_LINE = "$good = if ($kind -eq 'int') { Test-ServeIntegral -Value $v }";
+    const castEntry = clone('cast', (s) => {
+      assert.ok(s.includes(GOOD_LINE), '整数判定锚点漂了');
+      return s.replace(GOOD_LINE, "$good = if ($kind -eq 'int') { try { $null = [int]$v; $true } catch { $false } }");
+    });
+    const v1 = typeViolations(py, await readPsTypeVerdicts(castEntry, 'powershell'));
+    assert.ok(v1.some((x) => x.startsWith('limit-str')), '退回强转后 limit:"5" 仍被判类型错 ⇒ I1 没在量类型判定：' + v1.join(' | '));
+    // 同一条变异在真进程里也要看得到：那行不再被类型闸拒，而是走到分发
+    const castRows = rowsOf((await serveLines(castEntry, I2_LINES.slice(0, 1), 180000, 'powershell')).out);
+    assert.equal(castRows.length, 1, '变异副本没回一行响应');
+    assert.equal(castRows[0].ok, false, '变异副本没回拒绝（应被平台校验拒，而不是类型闸）');
+    assert.match(String(castRows[0].error), /^unknown platforms/, '退回强转后 limit:"5" 仍被拦在类型闸 ⇒ 拒绝不是类型闸干的：' + castRows[0].error);
+
+    // ② 表里把 excludeArchived 的类型写成 str ⇒ "false" 字符串被放行，判决与 python 相反
+    const KIND_LINE = "excludeArchived = 'bool'";
+    const strEntry = clone('kind', (s) => {
+      assert.ok(s.includes(KIND_LINE), 'excludeArchived 类型锚点漂了');
+      return s.replace(KIND_LINE, "excludeArchived = 'str'");
+    });
+    const v2 = typeViolations(py, await readPsTypeVerdicts(strEntry, 'powershell'));
+    assert.ok(v2.some((x) => x.startsWith('excl-strfalse')), '把 bool 改成 str 后 excl-strfalse 没变红：' + v2.join(' | '));
+
+    // ③ 只改注释 ⇒ 不该红（判据只看结构化内容，不跟文本变）
+    const noteEntry = clone('note', (s) => s.replace('v1.81.0：**值的类型**也要两层同判', 'v1.81.0：（改写过的说明）值的类型也要两层同判'));
+    assert.notEqual(fs.readFileSync(path.join(path.dirname(noteEntry), 'lib', 'serve.ps1'), 'utf8'), lib0, '注释变异没生效');
+    assert.deepEqual(typeViolations(py, await readPsTypeVerdicts(noteEntry, 'powershell')), [], '只改注释不该判红');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

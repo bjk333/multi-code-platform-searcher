@@ -108,10 +108,17 @@ function Get-ServeBoundedInt {
     #   语义 = clamp（越界夹到边界，不报错），与 limit/maxResults 的历史行为同构 —— 不新造第二种口径。
     #   $Max 用 [object]$null 表示「无上限」：`[int]$Max = $null` 会变成 0（PS 的 $null→int 转换），
     #   那样 maxResults 的"无上限"就会变成"上限 0"——正是本仓记录过的 -21 号坑。
+    # v1.81.0：夹紧改在 decimal 域做。此前是 `$v = [int]$Value`，20 位整数（python 侧是合法的 int，
+    #   会被夹到上界）在 PS 里直接 Int32 溢出抛异常 ⇒ 两层对同一个值一个"接受并夹紧"、一个"炸掉"。
     param([object]$Value, [int]$Min = 0, [object]$Max = $null, [int]$Default = 0)
     if ($null -eq $Value) { return $Default }
-    $v = [int]$Value
-    if ($v -lt $Min) { return $Min }
+    try { $d = [decimal]$Value } catch { $d = [decimal]::MaxValue }   # 超出 decimal 域 ⇒ 当"非常大"，下面按边界收口
+    if ($d -lt [decimal]$Min) { return $Min }
+    if ($d -gt [decimal][int]::MaxValue) {
+        if ($null -ne $Max) { return [int]$Max }
+        return [int]::MaxValue
+    }
+    $v = [int]$d
     if (($null -ne $Max) -and ($v -gt [int]$Max)) { return [int]$Max }
     return $v
 }
@@ -125,17 +132,24 @@ function Get-ServeKeyPolicy {
     #   ★这是参数面的第五份拷贝 ⇒ 必须与 mcps.py 的 MCP_TOOL_OPS 逐 op 对账（门 U-295-H1）。
     #   返回对象而不是裸数组：`return @()` 会被 PS 展开成 `$null`，那样"ping 不接受任何键"与
     #   "未知 op"就分不开了（本仓 -21 号坑的同类变体）。Known=$false 表示该 op 不存在。
+    # v1.81.0：表从"键名数组"升级成"键名 → 类型"。v1.79/1.80 只对账**有没有这个键**，类型全靠
+    #   PS 强转兜：`{"limit":"5"}` 收下、`{"excludeArchived":"false"}` 被 `[bool]` 读成 $True、
+    #   `{"keyword":5}` 把 5 当关键词真去搜 —— 而 mcps.py 对这三例全部抛 ValueError（v1.46.7 就抛了，
+    #   只是从来没人问"-Serve 那一层抛不抛"）。类型进表后，两张判据（键集合 H1 / 类型 I1）读同一份数据。
+    #   取值：'int' 整数 | 'bool' 布尔 | 'str' 字符串 | 'str!' 必填非空字符串（缺键或空串都拒）。
     param([string]$Op)
     $tbl = @{
-        'ping'     = @()
-        'auto'     = @('keyword', 'limit', 'maxResults', 'language', 'minStars', 'site')
-        'research' = @('keyword', 'limit', 'maxResults', 'site')
-        'repo'     = @('keyword', 'limit', 'maxResults', 'platforms', 'language', 'minStars', 'activeWithin', 'excludeArchived', 'license')
-        'code'     = @('keyword', 'limit', 'maxResults', 'language', 'repoScope', 'pathFilter')
-        'package'  = @('packages')
+        'ping'     = @{}
+        'auto'     = @{ keyword = 'str!'; limit = 'int'; maxResults = 'int'; language = 'str'; minStars = 'int'; site = 'str' }
+        'research' = @{ keyword = 'str!'; limit = 'int'; maxResults = 'int'; site = 'str' }
+        'repo'     = @{ keyword = 'str!'; limit = 'int'; maxResults = 'int'; platforms = 'str'; language = 'str'; minStars = 'int'; activeWithin = 'int'; excludeArchived = 'bool'; license = 'str' }
+        'code'     = @{ keyword = 'str!'; limit = 'int'; maxResults = 'int'; language = 'str'; repoScope = 'str'; pathFilter = 'str' }
+        'package'  = @{ packages = 'str!' }
     }
-    if (-not $tbl.ContainsKey($Op)) { return [PSCustomObject]@{ Known = $false; Keys = @() } }
-    return [PSCustomObject]@{ Known = $true; Keys = @($tbl[$Op]) }
+    if (-not $tbl.ContainsKey($Op)) { return [PSCustomObject]@{ Known = $false; Keys = @(); Kinds = @{} } }
+    $h = $tbl[$Op]
+    $keys = if ($h.Count -gt 0) { @($h.Keys | Sort-Object) } else { @() }
+    return [PSCustomObject]@{ Known = $true; Keys = $keys; Kinds = $h }
 }
 function Get-ServeUnknownKeys {
     # v1.79.0：请求里有、该 op 不认、且不是协议键 `op` 的键名（排序后返回；空数组 = 合规）。
@@ -170,4 +184,69 @@ function Get-ServeKeyRejection {
         allowed = @((Get-ServeKeyPolicy -Op $Op).Keys)
         ms      = $Ms
     }
+}
+function Test-ServeIntegral {
+    # v1.81.0：JSON 的整数字面量在两个运行时映射成不同 CLR 类型 —— 5.1 给 Int32/Int64（超长给 Decimal），
+    #   7 给 Int64（超长给 BigInteger）。只认整数：Double / 带小数的 Decimal / String / Boolean 全不认。
+    #   Decimal 只在 **scale=0** 时认（= 字面量没写小数点）：`5.0` 在 5.1 下正是 scale=1 的 Decimal，
+    #   而 python 的 `isinstance(5.0, int)` 也是 False ⇒ 两边同判"不是整数"。1e3 两边也都是 Double/float。
+    #   ★别用 `.Scale`：`System.Decimal.Scale` 在 .NET Framework（PS 5.1）里**不存在**（PS7 才有），
+    #   取不到的属性回 $null，`$null -eq 0` 恒 false ⇒ 20 位整数在 5.1 被误判成"不是整数"、
+    #   而 PS7 走 BigInteger 分支放行 —— 同一个函数两个运行时两种判决。用 GetBits 的 flags 位。
+    param([object]$Value)
+    if ($null -eq $Value) { return $false }
+    if ($Value -is [bool]) { return $false }
+    if ($Value -is [int] -or $Value -is [long] -or $Value -is [int16] -or $Value -is [byte] -or
+        $Value -is [sbyte] -or $Value -is [uint16] -or $Value -is [uint32] -or $Value -is [uint64]) { return $true }
+    if ($Value.GetType().Name -eq 'BigInteger') { return $true }
+    if ($Value -is [decimal]) { return (((([System.Decimal]::GetBits([decimal]$Value))[3] -shr 16) -band 0xFF) -eq 0) }
+    return $false
+}
+function Get-ServeTypeRejection {
+    # v1.81.0：**值的类型**也要两层同判。v1.79/1.80 只管"键名对不对"，值的类型全靠 PS 强转兜 ——
+    #   `{"limit":"5"}` 收下当 5 用；`{"excludeArchived":"false"}` 更糟，`[bool]"false"` 是 $True，
+    #   客户端说"别排除归档"被读成"排除归档"；`{"keyword":5}` 把 5 当关键词真的发了一轮检索。
+    #   mcps.py 对这三例全部抛 ValueError（v1.46.7 就抛了，U-202 C 也只测了 python 那一半）——
+    #   同一条纪律"类型不许静默转换"在一个入口生效、在另一个入口躺了 34 个版本。
+    #   顺序：先键名再类型（Get-ServeRequestRejection）—— 拼错又类型不对时先报拼错，用户改一次就够。
+    #   回 $null = 放行；否则回一整行响应。error 文本与 python 的 ValueError 逐字一致（门 U-295-I1 断言相等）。
+    param($Req, [string]$Op, [long]$Ms = 0)
+    $pol = Get-ServeKeyPolicy -Op $Op
+    if (-not $pol.Known) { return $null }      # 未知 op 交给 default 分支报（两处都报会让同一次错误两种文案）
+    $names = @()
+    if ($null -ne $Req) {
+        if ($Req -is [System.Collections.IDictionary]) { $names = @($Req.Keys) }
+        else { $names = @($Req.PSObject.Properties | ForEach-Object { [string]$_.Name }) }
+    }
+    foreach ($k in @($pol.Kinds.Keys | Sort-Object)) {
+        $kind = [string]$pol.Kinds[$k]
+        # 大小写敏感地判"这个键到底在不在"：PS 的属性绑定不敏感，靠它判会把 `Limit` 当成 `limit`（H3 管键名，这里不越权）
+        $has = (@($names | Where-Object { $_ -ceq $k }).Count -gt 0)
+        $v = if ($has) { if ($Req -is [System.Collections.IDictionary]) { $Req[$k] } else { $Req.$k } } else { $null }
+        if ((-not $has) -or ($null -eq $v)) {
+            # python 侧：`args.get(k)` 为 None ⇒ 必填键报"required"，可选键当没传（`... is not None` 守卫）
+            if ($kind -eq 'str!') { return [PSCustomObject]@{ ok = $false; op = $Op; error = ('{0} is required (non-empty string)' -f $k); ms = $Ms } }
+            continue
+        }
+        $good = if ($kind -eq 'int') { Test-ServeIntegral -Value $v }
+                elseif ($kind -eq 'bool') { $v -is [bool] }
+                else { $v -is [string] }
+        if (-not $good) {
+            $why = if ($kind -eq 'int') { 'an integer' } elseif ($kind -eq 'bool') { 'a boolean' } else { 'a string' }
+            $msg = if ($kind -eq 'str!') { '{0} is required (non-empty string)' -f $k } else { '{0} must be {1}' -f $k, $why }
+            return [PSCustomObject]@{ ok = $false; op = $Op; error = $msg; ms = $Ms }
+        }
+        if (($kind -eq 'str!') -and [string]::IsNullOrWhiteSpace([string]$v)) {
+            return [PSCustomObject]@{ ok = $false; op = $Op; error = ('{0} is required (non-empty string)' -f $k); ms = $Ms }
+        }
+    }
+    return $null
+}
+function Get-ServeRequestRejection {
+    # v1.81.0：分发前的两道闸合成一个入口（入口 1500 行硬上限，接线只留一行）。
+    #   ① 键名白名单（v1.79，含 v1.80 的大小写逐字匹配）② 值的类型（v1.81）。
+    param($Req, [string]$Op, [long]$Ms = 0)
+    $r = Get-ServeKeyRejection -Req $Req -Op $Op -Ms $Ms
+    if ($null -ne $r) { return $r }
+    return Get-ServeTypeRejection -Req $Req -Op $Op -Ms $Ms
 }
