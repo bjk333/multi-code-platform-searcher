@@ -1,230 +1,150 @@
 # multi-code-platform-searcher
 
-> 一次查询，同时打向 26 个引擎；**没跑到的那个，它会点名并给理由**。
+一次查询同时打 26 个源。跑不成的那个会点名，并告诉你为什么。
 
-一个面向 AI Agent 的技术调研与代码检索技能。支持 PowerShell 5.1 / 7+ 与 MCP 两种接入方式，
-覆盖 4 个代码托管平台、6 个包生态、7 个学术与社区信源，共 26 个引擎。
+## 为什么会有这个东西
 
----
+有次让 AI 帮我找一段现成实现，它回「没有找到相关代码」。我就按字面理解了，自己从头写。隔了两天才发现是 GitLab 的 token 过期，相关的那两个源压根没发出请求。
 
-## 它解决的问题
+「确实没有」和「我没搜」返回的东西长得一模一样，都是一个空列表。要区分它们，工具得额外记一份状态。多数工具省了这一步，因为用户看不见差别，记了也不加分。
 
-AI 助手告诉你「没有找到相关实现」的时候，有两种完全不同的真相：
+所以我写这个，主要就是让它在每次查询里把这份状态交出来：哪些源跑了、哪些没跑、没跑是因为缺令牌、被限流、连不上，还是我自己把它禁了。
 
-- 世界上确实没有
-- **它压根没搜**（缺令牌、被限流、源被禁用、网络不通）
+具体长这样，字段都在最外层：
 
-这两种情况在结果上长得一模一样：一个空列表。多数工具不区分，因为区分需要额外记录状态。
+```jsonc
+"coverage": {
+  "Requested": 4,          // 这次打算跑几个
+  "Executed": 3,           // 实际跑成几个
+  "Blocked": ["GitLabBlobs"],
+  "Verdict": "partial",    // 见下文五档
+  "ReasonCodes": { "GitLabBlobs": "missing-credential" }
+}
+```
 
-本项目的做法是**把账本摊开**：每次查询都返回 `coverage`，写明哪些引擎执行了、哪些被拦、
-各自的原因码。宁可告诉你「这个源我没跑」，也不假装搜过了。
+同一个关键词跑两次能说明问题：一次配了令牌，一次用 `-NoEnvFile` 故意不读，两次都返回 10 条结果，条数一模一样。区别在账本上——前一次 `Verdict=degraded`，后一次 `partial`，后者有 3 个源被拦，原因码是 `missing-credential` 和 `network-unavailable`。
 
-### 一次实测
+只看条数，这两次查询没有区别。这就是我当初被坑的那个坑。
 
-同一个关键词跑两次，**结果条数完全相同**：
+## 装
 
-| | 有令牌 | 无令牌（`-NoEnvFile`） |
-|---|---|---|
-| 结果条数 | 10 | 10 |
-| `coverage.Verdict` | `degraded` | `partial` |
-| `coverage.Blocked` | 空 | 3 个引擎 |
-| `ReasonCodes` | `forbidden` / `user-disabled` | `missing-credential` × 2 · `network-unavailable` |
+```powershell
+git clone https://github.com/bjk333/multi-code-platform-searcher.git
+cd multi-code-platform-searcher
 
-结果一样多，可信度不一样。**如果你只看条数，这两次查询没有区别。**
+# 放到 skills 目录（Claude Code / WorkBuddy 这类支持 Agent Skills 的宿主）
+Copy-Item -Recurse . "$HOME\.workbuddy\skills\multi-code-platform-searcher"
 
----
+# 想配令牌的话
+Copy-Item .env.example .env
+```
 
-## 覆盖范围
+然后体检一下，看这台机器上哪些源是活的：
 
-26 个引擎，按类分（每行个数相加 = 26，可直接对账）：
+```powershell
+.\multi-platform-searcher.ps1 -Doctor
+```
+
+不配令牌也能用，26 个源里 23 个是匿名可访问的。剩下 3 个（GitHub、GitLab、DeepSeek）缺令牌时不会假装搜过，会进 `Blocked` 并带上 `missing-credential`。
+
+环境要求：Windows PowerShell 5.1 或 PowerShell 7+，可选 Node.js 18 以上。macOS 我没跑过，别问我行不行。
+
+## 用
+
+```powershell
+# 让它自己判断该跑哪几条路
+.\multi-platform-searcher.ps1 -Auto -Keyword "jwt verify" -AsJson
+
+# 只要代码证据：给到文件行，不是丢一个仓库链接
+.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "jwt verify" -AsJson
+
+# 查一个包能不能商用
+.\multi-platform-searcher.ps1 -Package "npm:express" -AsJson
+
+# 只在某个仓库里搜
+.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "parse" -RepoScope "gchq/CyberChef"
+```
+
+想挂进 Agent 的话走 MCP：
+
+```powershell
+python mcps.py --mcp
+```
+
+暴露 6 个工具，`search_repositories` / `search_auto` / `search_code` / `research` / `package_lookup` / `ping`，标准 JSON-RPC，Claude Code 和 Cursor 都能接。
+
+## 26 个源都是谁
+
+按类分开，每行个数加起来正好 26，你可以自己数一遍：
 
 | 类别 | 引擎 | 个数 |
 |---|---|---|
 | 代码托管 | `github` · `github-code` · `gitlab-blobs` · `search-gitlab` · `gitee` · `codeberg` | 6 |
 | 代码检索 | `grep-app` · `sourcegraph` · `searchcode-repo` | 3 |
 | 包生态 | `npm-registry` · `crates-io` · `maven-central` · `nuget` · `packagist` · `search-rubygems` | 6 |
-| 元数据 | `deps-dev`（许可证 / 安全公告） · `docker-hub` · `mcp-registry` | 3 |
-| 学术 / 社区 | `arxiv` · `hugging-face` · `open-alex` · `se-excerpts` · `stack-exchange` · `hacker-news` · `deepseek-search` | 7 |
-| 本地 | `local-code`（当前工作区正则检索） | 1 |
-| | **合计** | **26** |
+| 元数据 | `deps-dev` · `docker-hub` · `mcp-registry` | 3 |
+| 学术与社区 | `arxiv` · `hugging-face` · `open-alex` · `se-excerpts` · `stack-exchange` · `hacker-news` · `deepseek-search` | 7 |
+| 本地 | `local-code` | 1 |
 
-42 个参数、6 个 MCP 工具。`-Auto` 由 query-planner 自动分类，一次进程内跑
-「发现 → 回填代码证据 → 补缺口」三轮。
+另外有 42 个参数。`-Auto` 会让 query-planner 先分类，然后在同一个进程里跑完「发现 → 回填代码证据 → 补缺口」三轮。
 
----
+## Verdict 有五档
 
-## 30 秒体验
-
-```powershell
-git clone https://github.com/bjk333/multi-code-platform-searcher.git
-cd multi-code-platform-searcher
-
-# 1) 先体检：这台机器哪些源可用、哪些缺令牌、哪些被封
-.\multi-platform-searcher.ps1 -Doctor
-
-# 2) 真跑一次：找 jwt verify 的实现，要的是代码证据（定位到文件行）
-.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "jwt verify" -AsJson
-```
-
-不用配任何令牌就能跑起来 —— 26 个引擎里有 20 个免令牌。缺令牌的那 6 个会在
-`coverage.Blocked` 里被点名并给出原因码，不会假装搜过。
-
----
-
-## 安装
-
-```powershell
-# 1) 放进 skills 目录（Claude Code / WorkBuddy 等支持 Agent Skills 的宿主）
-git clone https://github.com/bjk333/multi-code-platform-searcher.git
-Copy-Item -Recurse multi-code-platform-searcher "$HOME\.workbuddy\skills\"
-
-# 2) 配置令牌（可选但强烈建议，缺了对应源会记 blocked 而不是静默失败）
-Copy-Item .env.example .env
-# 编辑 .env，填 GITHUB_TOKEN / GITLAB_TOKEN / DEEPSEEK_API_KEY
-
-# 3) 体检
-.\multi-platform-searcher.ps1 -Doctor
-```
-
-**环境要求**：Windows PowerShell 5.1 或 PowerShell 7+；可选 Node.js ≥ 18（node 侧引擎与门禁）；
-需要能访问各平台公网 API。macOS 尚未实跑（见「限制」）。
-
----
-
-## 用法
-
-```powershell
-# 自动选路：一句话同时跑仓库发现 + 代码证据 + 研究信源
-.\multi-platform-searcher.ps1 -Auto -Keyword "jwt verify" -AsJson
-
-# 只要代码证据：定位到文件行，不是给一个仓库
-.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "jwt verify" -AsJson
-
-# 包元数据：默认版本 / 许可证 / 发布时间 / 已知安全公告数
-.\multi-platform-searcher.ps1 -Package "npm:express" -AsJson
-
-# 只在指定公开仓库内检索
-.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "parse" -RepoScope "gchq/CyberChef"
-```
-
-### 作为 MCP 服务接入 Agent
-
-```powershell
-python mcps.py --mcp
-```
-
-暴露 6 个工具：`search_repositories` / `search_auto` / `search_code` / `research` /
-`package_lookup` / `ping`。走标准 JSON-RPC，可挂进 Claude Code、Cursor 等支持 MCP 的客户端。
-
----
-
-## 输出契约
-
-所有模式共用同一套结果结构，方便程序消费：
-
-```jsonc
-{
-  "coverage": {
-    "Requested": 4,          // 本次打算跑几个引擎
-    "Executed": 3,           // 实际跑成几个
-    "Blocked": ["GitLabBlobs"],
-    "Verdict": "partial",    // full | degraded | partial | none | no-engines
-    "ReasonCodes": { "GitLabBlobs": "missing-credential" }
-  },
-  "results": [ /* 统一字段：Engine / Repo / File / Line / Preview / Url */ ],
-  "warnings": []
-}
-```
-
-### Verdict 五档
-
-| 值 | 含义 |
+| 值 | 什么情况 |
 |---|---|
-| `full` | 请求的引擎全部跑成 |
-| `degraded` | 跑成了，但有源降级（被限流、结果被截断等），`Executed` 非空 |
+| `full` | 请求的源全部跑成 |
+| `degraded` | 跑成了，但有源降级（限流、结果被截断），`Executed` 非空 |
 | `partial` | 有源被拦，`Executed` 非空 |
-| `none` | 请求了引擎，但一个都没执行（全 blocked / degraded） |
-| `no-engines` | 什么都没请求（相关源全被禁用） |
+| `none` | 请求了，但一个都没执行 |
+| `no-engines` | 什么都没请求，相关源全被禁用 |
 
-对外还有一个四态视图（`ok` / `partial` / `failed` / `empty`），**由 `Verdict` 机械派生，不得独立赋值**：
+还有一套四态视图（`ok` / `partial` / `failed` / `empty`），是从 Verdict 机械派生的，不允许独立赋值，免得两处各说各话。
 
-```
-full→ok | partial→partial | degraded→partial | none→failed | no-engines→empty
-```
+原因码目前这几个：`missing-credential`（缺令牌）、`forbidden`（有令牌但权限不够或被拒）、`network-unavailable`（连不上）、`rate-limited`（被限流）、`user-disabled`（主动禁用）、`tool-missing`（缺本地二进制，比如 ripgrep）、`quota-exhausted`（配额用尽）。
 
-同一条事实只在一个地方说，避免 `results` 和 `ReasonCodes` 各说各话。
+五档里任何一档，都不会让「结果为空」等于「世界上没有」。
 
-**任何一档都不会让「结果为空」等价于「世界上没有」。**
+## 测试比我预想的多
 
-### 常见 ReasonCodes
+写的过程中大部分时间花在证明自己没骗自己上。现在产品代码一万三千行左右，测试代码两万七千行，比例差不多 2:1。门禁 168 道，用例一千上下。
 
-| 码 | 意思 |
-|---|---|
-| `missing-credential` | 缺令牌 |
-| `forbidden` | 有令牌但权限不够或被拒 |
-| `network-unavailable` | 连不上 |
-| `rate-limited` | 被限流 |
-| `user-disabled` | 主动禁用 |
-| `tool-missing` | 缺本地二进制（如 ripgrep） |
-| `quota-exhausted` | 配额用尽 |
-
----
-
-## 工程状态（诚实版）
-
-这个项目把大部分工程量花在「证明自己没骗自己」上：
-
-| 项 | 数字 |
-|---|---|
-| 产品代码 | 约 13,100 行（PowerShell + Python） |
-| 测试代码 | 约 27,400 行（测试 : 产品 ≈ 2.1 : 1） |
-| 门禁 | 168 道门 / 约 1,000 个用例 |
-| 发布校验 | 双凭证（Node 门 + PowerShell 套件），任一不过即拒绝发布 |
-| 静态门棘轮 | 只降不升，防止新增债务 |
+发布前要过两张凭证，Node 门和 PowerShell 套件，缺一张或者任何一张有失败，发布脚本直接拒发。静态门有个棘轮，只许降不许升。
 
 ```powershell
-node tests/run-node-gates.mjs --profile=repo   # Node 侧全量门
-.\tests\run-tests.ps1                          # PowerShell 侧套件
+node tests/run-node-gates.mjs --profile=repo
+.\tests\run-tests.ps1
 ```
 
----
+这些测试主要是防止我自己糊弄自己，不是保证你装上就能跑。真实跑过的环境是 Windows（PS 5.1 和 pwsh 7）和 Linux（pwsh 7，容器里）。
 
-## 和 grep.app / Sourcegraph / Cursor 内置搜索什么关系
+## 和 grep.app、Sourcegraph、Cursor 的关系
 
-**它不取代它们，它补它们的盲区。**
+不冲突，用的场景不一样。
 
-| | 它们 | 这个 |
-|---|---|---|
-| 强项 | 单源检索质量、自有大仓索引、IDE 内即时反馈 | 多源汇总 + 每次查询都带状态账本 |
-| 覆盖面 | 通常 1 个源 | 26 个引擎：4 个代码托管 + 6 个包生态 + 7 个学术社区 |
-| 搜不到时 | 给你一个空列表 | 空列表 + **哪个源没跑、为什么** |
-| 擅长的问题 | 「这个函数在哪」 | 「这个方案除了 GitHub 还有人做过吗」「这个包能不能商用」 |
+grep.app 和 Sourcegraph 单源检索质量比我高，这个我承认，我自己也在用。Cursor 改当前仓库也比这个顺手。它们的问题是只给你结果，不给你过程——搜不到的时候你不知道是没这个函数，还是索引没覆盖到。
 
-典型分工：用 Cursor 的内置检索改当前仓库，用本项目做**跨平台技术调研**和**选型前的事实核查**。
+我这个的价值在横向：一个方案除了 GitHub 还有谁做过、这个包能不能商用、某个方向学术界有没有人碰过。这种问题要跨好几个源问，且每次都要知道哪个源哑了。
 
----
+所以典型用法是：改代码用 Cursor，选型和技术调研用这个。
 
-## 限制
+## 缺点
 
-写在前面，省得你踩：
+说在前面，免得你踩了回来骂我。
 
-1. **令牌不全**。GitHub / GitLab / DeepSeek 三个源需要令牌，缺失时对应引擎记 `blocked` 并给原因码，不会静默跳过。其余 20 个引擎免令牌。
-2. **macOS 未实跑**。Windows（PS 5.1 与 pwsh 7）与 Linux（pwsh 7，容器内）有实跑记录。
-3. **速率上限受各平台约束**。全量并发会触发限流，串行模式更稳（`U153_SERIAL=1`）。
-4. **它不替代专业代码搜索**。定位是「多源汇总 + 状态可核」，不是取代 grep.app 或 Sourcegraph。
+**本地代码检索默认是坏的。** 这部分依赖 ripgrep 或 ugrep，我本机两个都没装，所以 `-Doctor` 会直接告诉你「本地代码检索不可用」。注意它说的是不可用，不是「本地 0 命中」——这两句差别很大，我有意让它分开。
 
----
+**只有 3 个源要令牌，其余全走匿名。** 好处是装上就能跑，坏处是匿名请求的限额比带令牌低得多，全量并发时会更容易撞上 `rate-limited`。真要做长期调研，还是把令牌配上。
+
+全量并发撞限流的话切串行，`U153_SERIAL=1`，慢一些但读数干净。
+
+macOS 完全没跑过。Linux 只在容器里跑过 pwsh 7。
+
+不是语义检索，是关键词加结构化检索。想找「类似这个思路的项目」，它帮不上忙。
 
 ## License
 
-MPL-2.0
+MPL-2.0，Copyright (c) 2026 bjk333。
 
-Copyright (c) 2026 bjk333
+能商用、能改、能和闭源代码一起打包卖。唯一的要求是：如果你改了其中某个源文件再分发，那个文件的改动要公开（MPL 2.0 §3.2）。只把它部署成服务、不分发代码，不触发这条。
 
-**这份许可是文件级的（file-level copyleft），不是 MIT 那种随便拿：**
-
-- 你可以商用、可以改、可以和闭源代码一起打包发布。
-- 但如果你修改了本项目里的某个源文件再分发，**必须公开那个文件的改动**（MPL 2.0 §3.2）。
-- 只部署成服务、不分发二进制或源码，不触发开源义务。
-
-要「改了必须回流」用这个；要「禁止闭源商用」得用 AGPL-3.0，代价是企业用户基本不敢碰。
+想要「改了必须回流到上游、不许闭源」的效果，得用 AGPL-3.0，代价是企业用户基本不敢碰，我选了中间那个。
