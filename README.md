@@ -53,11 +53,29 @@ AI 助手告诉你「没有找到相关实现」的时候，有两种完全不�
 
 ---
 
+## 30 秒体验
+
+```powershell
+git clone https://github.com/bjk333/multi-code-platform-searcher.git
+cd multi-code-platform-searcher
+
+# 1) 先体检：这台机器哪些源可用、哪些缺令牌、哪些被封
+.\multi-platform-searcher.ps1 -Doctor
+
+# 2) 真跑一次：找 jwt verify 的实现，要的是代码证据（定位到文件行）
+.\multi-platform-searcher.ps1 -CodeEvidence -Keyword "jwt verify" -AsJson
+```
+
+不用配任何令牌就能跑起来 —— 26 个引擎里有 20 个免令牌。缺令牌的那 6 个会在
+`coverage.Blocked` 里被点名并给出原因码，不会假装搜过。
+
+---
+
 ## 安装
 
 ```powershell
 # 1) 放进 skills 目录（Claude Code / WorkBuddy 等支持 Agent Skills 的宿主）
-git clone https://github.com/<owner>/multi-code-platform-searcher.git
+git clone https://github.com/bjk333/multi-code-platform-searcher.git
 Copy-Item -Recurse multi-code-platform-searcher "$HOME\.workbuddy\skills\"
 
 # 2) 配置令牌（可选但强烈建议，缺了对应源会记 blocked 而不是静默失败）
@@ -139,6 +157,21 @@ python mcps.py --mcp
 node tests/run-node-gates.mjs --profile=repo   # Node 侧全量门
 .\tests\run-tests.ps1                          # PowerShell 侧套件
 ```
+
+---
+
+## 和 grep.app / Sourcegraph / Cursor 内置搜索什么关系
+
+**它不取代它们，它补它们的盲区。**
+
+| | 它们 | 这个 |
+|---|---|---|
+| 强项 | 单源检索质量、自有大仓索引、IDE 内即时反馈 | 多源汇总 + 每次查询都带状态账本 |
+| 覆盖面 | 通常 1 个源 | 26 个引擎：4 个代码托管 + 6 个包生态 + 7 个学术社区 |
+| 搜不到时 | 给你一个空列表 | 空列表 + **哪个源没跑、为什么** |
+| 擅长的问题 | 「这个函数在哪」 | 「这个方案除了 GitHub 还有人做过吗」「这个包能不能商用」 |
+
+典型分工：用 Cursor 的内置检索改当前仓库，用本项目做**跨平台技术调研**和**选型前的事实核查**。
 
 ---
 
