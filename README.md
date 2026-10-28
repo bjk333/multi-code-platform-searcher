@@ -128,7 +128,7 @@ python mcps.py --mcp
     "Requested": 4,          // 本次打算跑几个引擎
     "Executed": 3,           // 实际跑成几个
     "Blocked": ["GitLabBlobs"],
-    "Verdict": "partial",    // ok | degraded | partial
+    "Verdict": "partial",    // full | degraded | partial | none | no-engines
     "ReasonCodes": { "GitLabBlobs": "missing-credential" }
   },
   "results": [ /* 统一字段：Engine / Repo / File / Line / Preview / Url */ ],
@@ -136,8 +136,37 @@ python mcps.py --mcp
 }
 ```
 
-`Verdict` 的三档语义是刻意区分的：`ok` = 全部跑成；`degraded` = 跑成了但部分源降级；
-`partial` = 有源被拦。**任何一档都不会让结果为空就当作"没有"。**
+### Verdict 五档
+
+| 值 | 含义 |
+|---|---|
+| `full` | 请求的引擎全部跑成 |
+| `degraded` | 跑成了，但有源降级（被限流、结果被截断等），`Executed` 非空 |
+| `partial` | 有源被拦，`Executed` 非空 |
+| `none` | 请求了引擎，但一个都没执行（全 blocked / degraded） |
+| `no-engines` | 什么都没请求（相关源全被禁用） |
+
+对外还有一个四态视图（`ok` / `partial` / `failed` / `empty`），**由 `Verdict` 机械派生，不得独立赋值**：
+
+```
+full→ok | partial→partial | degraded→partial | none→failed | no-engines→empty
+```
+
+同一条事实只在一个地方说，避免 `results` 和 `ReasonCodes` 各说各话。
+
+**任何一档都不会让「结果为空」等价于「世界上没有」。**
+
+### 常见 ReasonCodes
+
+| 码 | 意思 |
+|---|---|
+| `missing-credential` | 缺令牌 |
+| `forbidden` | 有令牌但权限不够或被拒 |
+| `network-unavailable` | 连不上 |
+| `rate-limited` | 被限流 |
+| `user-disabled` | 主动禁用 |
+| `tool-missing` | 缺本地二进制（如 ripgrep） |
+| `quota-exhausted` | 配额用尽 |
 
 ---
 
